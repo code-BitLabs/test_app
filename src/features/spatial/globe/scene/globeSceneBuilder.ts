@@ -13,6 +13,7 @@ import { SiteMarker, applyMarkerHorizonOcclusion, createSiteMarkers } from '@/fe
 import { CameraTransitioner, createCameraTransitioner } from '@/features/spatial/globe/interaction/globeCameraPresets';
 import { createMarkerPickingController } from '@/features/spatial/globe/interaction/globePicking';
 import { createPolarTerrainFeatures } from '@/features/spatial/globe/scene/globePolarTerrain';
+import { calculate3DOrbitSensitivity } from '@/features/spatial/interaction/zoomAwareInteractionModel';
 
 /** Used if the container has not laid out yet; the ResizeObserver corrects it immediately. */
 const FALLBACK_CONTAINER_WIDTH = 500;
@@ -32,6 +33,8 @@ export interface GlobeDiagnosticsMetrics {
   terrainLod?: string;
   terrainDemSource?: string;
   terrainEffectiveResolution?: string;
+  orbitRotateSpeed?: number;
+  orbitDamping?: number;
 }
 
 export interface GlobeSceneHandle {
@@ -211,6 +214,8 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
           terrainLod: polarTerrain.getTerrainDiagnostics().currentLOD,
           terrainDemSource: polarTerrain.getTerrainDiagnostics().sourceDem,
           terrainEffectiveResolution: polarTerrain.getTerrainDiagnostics().effectiveResolution,
+          orbitRotateSpeed: Math.round(globe.controls.rotateSpeed * 1000) / 1000,
+          orbitDamping: Math.round(globe.controls.dampingFactor * 1000) / 1000,
         };
       }
     }
@@ -250,6 +255,16 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
     // Dynamic scale-aware near clipping plane and deep-zoom overlay auto-decluttering
     const distToTarget = globe.camera.position.distanceTo(globe.controls.target);
     polarTerrain.updateLOD(distToTarget);
+
+    // Dynamically scale OrbitControls sensitivity to zoom level:
+    // Guarantees micro-meter precision at surface zoom and fluid navigation at global scale
+    const sensitivity = calculate3DOrbitSensitivity(distToTarget, container.clientHeight || FALLBACK_CONTAINER_HEIGHT);
+    globe.controls.rotateSpeed = sensitivity.rotateSpeed;
+    globe.controls.panSpeed = sensitivity.panSpeed;
+    globe.controls.dampingFactor = sensitivity.dampingFactor;
+    if (typeof (globe.controls as any).zoomSpeed === 'number') {
+      (globe.controls as any).zoomSpeed = sensitivity.zoomSpeed;
+    }
 
     const isDeepZoom = distToTarget < 0.65;
     graticuleGroup.visible = !isDeepZoom && layerVisibility.showGrid;

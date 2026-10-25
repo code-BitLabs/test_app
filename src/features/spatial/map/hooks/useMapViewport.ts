@@ -24,6 +24,8 @@ import {
   type MapViewport,
 } from '@/features/spatial/map/model/mapViewportMath';
 
+import { calculate2DPanSensitivity } from '@/features/spatial/interaction/zoomAwareInteractionModel';
+
 const { svgSize: SVG_SIZE, center: MAP_CENTER } = DEFAULT_PROJECTION_CONFIG;
 
 const REGIONAL_VIEWPORT: MapViewport = { zoom: REGIONAL_ZOOM, pan: { x: 0, y: 0 } };
@@ -38,7 +40,7 @@ export function useMapViewport(sitePos: ProjectedPoint) {
   const [activePreset, setActivePreset] = useState<MapZoomPreset | 'custom'>('regional');
   const [isDragging, setIsDragging] = useState(false);
   const [cursorCoord, setCursorCoord] = useState<SelenographicCoordinate | null>(null);
-  const dragStartRef = useRef({ x: 0, y: 0 });
+  const dragStartRef = useRef({ startX: 0, startY: 0, startPanX: 0, startPanY: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
 
   const { zoom, pan } = viewport;
@@ -84,7 +86,12 @@ export function useMapViewport(sitePos: ProjectedPoint) {
     (event: ReactMouseEvent) => {
       if (event.button !== 0) return;
       setIsDragging(true);
-      dragStartRef.current = dragOrigin(viewport, event.clientX, event.clientY);
+      dragStartRef.current = {
+        startX: event.clientX,
+        startY: event.clientY,
+        startPanX: viewport.pan.x,
+        startPanY: viewport.pan.y,
+      };
     },
     [viewport],
   );
@@ -93,8 +100,16 @@ export function useMapViewport(sitePos: ProjectedPoint) {
     (event: ReactMouseEvent) => {
       if (isDragging) {
         setActivePreset('custom');
+        const rect = svgRef.current?.getBoundingClientRect();
+        const renderedWidth = rect && rect.width > 0 ? rect.width : SVG_SIZE;
         setViewport((current) => {
-          const rawPan = draggedPan(dragStartRef.current, event.clientX, event.clientY);
+          const { panMultiplier } = calculate2DPanSensitivity(current.zoom, renderedWidth, SVG_SIZE);
+          const deltaX = (event.clientX - dragStartRef.current.startX) * panMultiplier;
+          const deltaY = (event.clientY - dragStartRef.current.startY) * panMultiplier;
+          const rawPan = {
+            x: dragStartRef.current.startPanX + deltaX,
+            y: dragStartRef.current.startPanY + deltaY,
+          };
           const boundedPan = clampPan(rawPan, current.zoom, MAP_CENTER);
           return { ...current, pan: boundedPan };
         });

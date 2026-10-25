@@ -134,8 +134,14 @@ export function useGlobeScene(input: UseGlobeSceneInput): UseGlobeSceneResult {
     }
 
     handleRef.current = handle;
+    if (typeof window !== 'undefined') {
+      (window as any).__globeHandle = handle;
+    }
     return () => {
       handleRef.current = null;
+      if (typeof window !== 'undefined') {
+        delete (window as any).__globeHandle;
+      }
       handle.dispose();
     };
   }, []);
