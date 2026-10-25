@@ -29,6 +29,7 @@ export function applyCelestialEpoch(handle: GlobeSceneHandle, epoch: CelestialEp
     epoch.subEarthLonDeg,
   );
   renderCelestialVectors(handle.vectorsGroup, epoch);
+  handle.setVectorsVisibility?.(epoch.showVectors);
 }
 
 /** Re-highlights the marker set for the newly selected candidate. */
@@ -43,8 +44,12 @@ export function applyLayerVisibility(
   showGrid: boolean,
   showShadowRegions: boolean,
 ): void {
-  handle.graticuleGroup.visible = showGrid;
-  handle.footprintGroup.visible = showShadowRegions;
+  if (handle.setLayerVisibility) {
+    handle.setLayerVisibility(showGrid, showShadowRegions);
+  } else {
+    handle.graticuleGroup.visible = showGrid;
+    handle.footprintGroup.visible = showShadowRegions;
+  }
 }
 
 /** Updates optional layer visibility for surface, markers, and labels. */

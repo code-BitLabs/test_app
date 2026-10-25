@@ -44,6 +44,8 @@ export interface GlobeSceneHandle {
   transitioner: CameraTransitioner;
   setSelectedSiteId?: (id: string) => void;
   setDisplayOptions?: (opts: { showMarkers?: boolean; showLabels?: boolean; showTerrain?: boolean }) => void;
+  setLayerVisibility?: (showGrid: boolean, showShadowRegions: boolean) => void;
+  setVectorsVisibility?: (showVectors: boolean) => void;
   setFlyover?: (active?: boolean) => void;
   isFlyoverActive?: () => boolean;
   getDiagnostics?: () => GlobeDiagnosticsMetrics;
@@ -125,6 +127,8 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
   const transitioner = createCameraTransitioner();
   let currentSelectedSiteId = input.initialSelectedSiteId;
   let displayOptions = { showMarkers: true, showLabels: true, showTerrain: true };
+  let layerVisibility = { showGrid: true, showShadowRegions: true };
+  let isVectorsEnabled = true;
   let isFlyoverEnabled = false;
 
   // User manual drag/orbit immediately interrupts in-flight camera transitions and flyover
@@ -225,15 +229,34 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
       globe.controls.update();
     }
 
-    // Anti-penetration collision guard: prevent camera from entering below Moon surface datum
-    const distToCenter = globe.camera.position.length();
-    if (distToCenter < MOON_SCENE_RADIUS + 0.006) {
-      globe.camera.position.setLength(MOON_SCENE_RADIUS + 0.006);
+    // Anti-penetration collision guard: sample true measured LOLA elevation at camera sub-satellite point
+    // to strictly prevent camera from clipping underground at elevated rim/ridges or crater floors
+    const camPos = globe.camera.position;
+    const camDist = camPos.length();
+    if (camDist > 0.01 && !transitioner.isTransitioning()) {
+      const phi = Math.acos(Math.max(-1, Math.min(1, camPos.y / camDist)));
+      const camLatDeg = 90 - (phi * 180) / Math.PI;
+      let camLonDeg = (Math.atan2(camPos.x, camPos.z) * 180) / Math.PI;
+      if (camLonDeg < 0) camLonDeg += 360;
+
+      const localElevMeters = polarTerrain.multiLodTerrain.getSurfaceElevationAt(camLatDeg, camLonDeg);
+      const localElevUnits = (localElevMeters / 1000.0) * (MOON_SCENE_RADIUS / 1737.4);
+      const minSafeRadius = MOON_SCENE_RADIUS + Math.max(0, localElevUnits) + 0.0035;
+      if (camDist < minSafeRadius) {
+        camPos.setLength(minSafeRadius);
+      }
     }
 
-    // Dynamic scale-aware near clipping plane adjustment (down to 0.002 for close inspection)
+    // Dynamic scale-aware near clipping plane and deep-zoom overlay auto-decluttering
     const distToTarget = globe.camera.position.distanceTo(globe.controls.target);
     polarTerrain.updateLOD(distToTarget);
+
+    const isDeepZoom = distToTarget < 0.65;
+    graticuleGroup.visible = !isDeepZoom && layerVisibility.showGrid;
+    footprintGroup.visible = !isDeepZoom && layerVisibility.showShadowRegions;
+    vectorsGroup.visible = !isDeepZoom && isVectorsEnabled;
+    polarTerrain.setCraterOutlinesVisible(!isDeepZoom);
+
     const targetNear = distToTarget < 0.25 ? 0.002 : distToTarget < 0.8 ? 0.01 : 0.05;
     if (Math.abs(globe.camera.near - targetNear) > 0.0005) {
       globe.camera.near = targetNear;
@@ -248,7 +271,9 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
       occlusionScratch,
       displayOptions,
     );
-    globe.controls.update();
+    if (!transitioner.isTransitioning()) {
+      globe.controls.update();
+    }
     globe.renderer.render(globe.scene, globe.camera);
 
     if (isSoftwareGl) {
@@ -294,6 +319,19 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
         surface.mesh.visible = opts.showTerrain;
         polarTerrain.group.visible = opts.showTerrain;
       }
+    },
+    setLayerVisibility: (showGrid: boolean, showShadowRegions: boolean) => {
+      layerVisibility = { showGrid, showShadowRegions };
+      const dist = globe.camera.position.distanceTo(globe.controls.target);
+      const isDeep = dist < 0.65;
+      graticuleGroup.visible = !isDeep && showGrid;
+      footprintGroup.visible = !isDeep && showShadowRegions;
+    },
+    setVectorsVisibility: (showVectors: boolean) => {
+      isVectorsEnabled = showVectors;
+      const dist = globe.camera.position.distanceTo(globe.controls.target);
+      const isDeep = dist < 0.65;
+      vectorsGroup.visible = !isDeep && showVectors;
     },
     setFlyover: (active?: boolean) => {
       isFlyoverEnabled = active !== undefined ? active : !isFlyoverEnabled;

@@ -10,9 +10,11 @@ const KM_TO_SCENE_UNITS = MOON_SCENE_RADIUS / 1737.4;
 
 export interface PolarTerrainGroup {
   group: THREE.Group;
+  craterOutlinesGroup: THREE.Group;
   multiLodTerrain: MultiLodTerrainMesh;
   updateSelectedSite: (selectedSiteId: string) => void;
   updateLOD: (cameraDistanceToTarget: number) => void;
+  setCraterOutlinesVisible: (visible: boolean) => void;
   getTerrainDiagnostics: () => TerrainDiagnostics;
   dispose: () => void;
 }
@@ -20,7 +22,7 @@ export interface PolarTerrainGroup {
 /**
  * Creates scientifically grounded 3D lunar south-polar topographic reference features:
  * 1. Crater Morphology Outlines: Elevated 3D rim boundaries derived from IAU/LOLA crater catalog (Shackleton, de Gerlache, etc.).
- *    Explicitly labeled as illustrative morphological catalog bounds, without unverified flat baseplates.
+ *    Organized into a dedicated sub-group that auto-hides at close zoom to avoid obstructing terrain detail.
  * 2. Malapert Massif Elevation Landmark: Prominent +5.1 km mountain ridge crest.
  * 3. Candidate Coordinate Benchmark: Calibrated selenographic datum crosshair at the selected candidate's verified coordinates.
  */
@@ -32,6 +34,10 @@ export function createPolarTerrainFeatures(initialSelectedSiteId: string): Polar
   const materials: THREE.Material[] = [];
 
   // 1. Crater Morphology Outlines from IAU/LOLA Crater Catalog
+  const craterOutlinesGroup = new THREE.Group();
+  craterOutlinesGroup.name = 'CraterOutlines';
+  group.add(craterOutlinesGroup);
+
   CRATERS.forEach((crater) => {
     const center = latLonToVector3(crater.lat, crater.lon, MOON_SCENE_RADIUS);
     const normal = center.clone().normalize();
@@ -61,11 +67,11 @@ export function createPolarTerrainFeatures(initialSelectedSiteId: string): Polar
     const rimMat = new THREE.LineBasicMaterial({
       color: 0x64748b, // Subdued slate tone
       transparent: true,
-      opacity: 0.60,
+      opacity: 0.50,
       linewidth: 1.5,
     });
     materials.push(rimMat);
-    group.add(new THREE.Line(rimGeo, rimMat));
+    craterOutlinesGroup.add(new THREE.Line(rimGeo, rimMat));
   });
 
   // 2. Malapert Massif Elevation Landmark (+5.1 km crest)
@@ -93,11 +99,11 @@ export function createPolarTerrainFeatures(initialSelectedSiteId: string): Polar
     const ridgeMat = new THREE.LineBasicMaterial({
       color: 0x94a3b8,
       transparent: true,
-      opacity: 0.80,
+      opacity: 0.70,
       linewidth: 2.0,
     });
     materials.push(ridgeMat);
-    group.add(new THREE.Line(ridgeGeo, ridgeMat));
+    craterOutlinesGroup.add(new THREE.Line(ridgeGeo, ridgeMat));
   }
 
   // 3. Candidate Coordinate Benchmark (IAU 2000 ME Selenographic Datum)
@@ -109,6 +115,8 @@ export function createPolarTerrainFeatures(initialSelectedSiteId: string): Polar
   const initialSite = CANDIDATE_SITES.find((s) => s.id === initialSelectedSiteId) || CANDIDATE_SITES[0];
   const multiLodTerrain = createMultiLodTerrainMesh(initialSite);
   group.add(multiLodTerrain.group);
+
+  let manualCraterOutlinesOverride: boolean | null = null;
 
   function buildBenchmark(siteId: string) {
     while (benchmarkGroup.children.length > 0) {
@@ -124,7 +132,7 @@ export function createPolarTerrainFeatures(initialSelectedSiteId: string): Polar
     const sitePos = latLonToVector3(
       site.coordinates.latitudeDeg,
       site.coordinates.longitudeDeg,
-      MOON_SCENE_RADIUS + elevSceneUnits + 0.002,
+      MOON_SCENE_RADIUS + elevSceneUnits + 0.0006,
     );
     const normal = sitePos.clone().normalize();
 
@@ -138,8 +146,8 @@ export function createPolarTerrainFeatures(initialSelectedSiteId: string): Polar
     north.normalize();
     const east = new THREE.Vector3().crossVectors(north, normal).normalize();
 
-    // Subtle crosshair tick marks (1.5 km span) indicating the coordinate datum
-    const crosshairSpan = 1.5 * KM_TO_SCENE_UNITS;
+    // Delicate crosshair tick marks (0.8 km span) indicating the coordinate datum without obscuring terrain
+    const crosshairSpan = 0.8 * KM_TO_SCENE_UNITS;
     const crosshairPoints: THREE.Vector3[] = [
       sitePos.clone().add(north.clone().multiplyScalar(-crosshairSpan)),
       sitePos.clone().add(north.clone().multiplyScalar(crosshairSpan)),
@@ -151,7 +159,7 @@ export function createPolarTerrainFeatures(initialSelectedSiteId: string): Polar
     const crossMat = new THREE.LineBasicMaterial({
       color: 0x22d3ee, // Laser cyan datum
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.75,
       linewidth: 1.5,
     });
     benchmarkGroup.add(new THREE.LineSegments(crossGeo, crossMat));
@@ -161,6 +169,7 @@ export function createPolarTerrainFeatures(initialSelectedSiteId: string): Polar
 
   return {
     group,
+    craterOutlinesGroup,
     multiLodTerrain,
     updateSelectedSite: (siteId: string) => {
       const site = CANDIDATE_SITES.find((s) => s.id === siteId) || CANDIDATE_SITES[0];
@@ -169,6 +178,16 @@ export function createPolarTerrainFeatures(initialSelectedSiteId: string): Polar
     },
     updateLOD: (cameraDistanceToTarget: number) => {
       multiLodTerrain.updateLOD(cameraDistanceToTarget);
+      // Auto-declutter: at deep zoom (< 0.65 units), hide crater outline rings unless manually forced
+      if (manualCraterOutlinesOverride !== null) {
+        craterOutlinesGroup.visible = manualCraterOutlinesOverride;
+      } else {
+        craterOutlinesGroup.visible = cameraDistanceToTarget >= 0.65;
+      }
+    },
+    setCraterOutlinesVisible: (visible: boolean) => {
+      manualCraterOutlinesOverride = visible;
+      craterOutlinesGroup.visible = visible;
     },
     getTerrainDiagnostics: () => {
       return multiLodTerrain.getDiagnostics();

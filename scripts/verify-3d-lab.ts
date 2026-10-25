@@ -27,7 +27,7 @@ async function run() {
   const screenshot = async (filename: string) => {
     await page.screenshot({
       path: path.join(outputDir, filename),
-      timeout: 15000,
+      timeout: 30000,
       animations: 'disabled',
     });
     console.log(`Saved ${filename}`);
@@ -43,36 +43,55 @@ async function run() {
   console.log('2. Selecting Global preset...');
   const globalBtn = page.getByTestId('preset-global');
   await globalBtn.click({ force: true });
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1800);
   await screenshot('lab-3d-2-global.png');
 
   // Step 3: Candidate Overview (Mode B)
   console.log('3. Selecting Candidate Overview preset (Mode B)...');
   const siteBtn = page.getByTestId('preset-site');
   await siteBtn.click({ force: true });
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1800);
   await screenshot('lab-3d-3-candidate-overview.png');
 
   // Step 4: Mode C: 45° Oblique Inspection
   console.log('4. Selecting 45° Oblique preset (Mode C)...');
   const obliqueBtn = page.getByTestId('preset-oblique');
   await obliqueBtn.click({ force: true });
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1800);
   await screenshot('lab-3d-4-oblique-45.png');
 
   // Step 5: Mode D: Tactical Overhead Nadir
   console.log('5. Selecting Overhead preset (Mode D)...');
   const overheadBtn = page.getByTestId('preset-overhead');
   await overheadBtn.click({ force: true });
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1800);
   await screenshot('lab-3d-5-overhead.png');
+
+  // Step 5b: Overhead Maximum Deep Zoom
+  console.log('5b. Zooming into maximum close-range in Overhead mode...');
+  await page.mouse.move(720, 450);
+  for (let i = 0; i < 5; i++) {
+    await page.mouse.wheel(0, -120);
+    await page.waitForTimeout(100);
+  }
+  await page.waitForTimeout(1200);
+  await screenshot('lab-3d-5b-overhead-max-zoom.png');
 
   // Step 6: Mode E: Ground-Level Horizon Inspection
   console.log('6. Selecting Horizon preset (Mode E)...');
   const horizonBtn = page.getByTestId('preset-horizon');
   await horizonBtn.click({ force: true });
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1800);
   await screenshot('lab-3d-6-horizon.png');
+
+  // Step 6b: Horizon Close Inspection
+  console.log('6b. Zooming into close terrain in Horizon mode...');
+  for (let i = 0; i < 3; i++) {
+    await page.mouse.wheel(0, -80);
+    await page.waitForTimeout(100);
+  }
+  await page.waitForTimeout(1200);
+  await screenshot('lab-3d-6b-horizon-close.png');
 
   // Step 7: Smooth Orbit Drag at Local Scale
   console.log('7. Simulating manual orbit drag in local inspection...');

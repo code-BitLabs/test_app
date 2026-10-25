@@ -5,8 +5,8 @@ import { CameraPreset } from '@/features/spatial/model/spatialPreferences';
 import { MOON_SCENE_RADIUS, latLonToVector3 } from '@/features/spatial/globe/scene/globeScene';
 
 /** Per-frame easing of a preset change: progress closes the transition, lerp moves the view. */
-const TRANSITION_PROGRESS_STEP = 0.035;
-const TRANSITION_LERP_FACTOR = 0.08;
+const TRANSITION_PROGRESS_STEP = 0.055;
+const TRANSITION_LERP_FACTOR = 0.14;
 
 /**
  * Calibrated camera distances for 38° FOV and Moon radius 1.45:
@@ -16,11 +16,11 @@ const TRANSITION_LERP_FACTOR = 0.08;
  * - Site Focus: 1.35 units above candidate normal.
  */
 export const NADIR_CAMERA_DISTANCE = 4.8;
-export const GLOBAL_CAMERA_POSITION: readonly [number, number, number] = [0, -2.4, 5.2];
-export const GLOBAL_LOOK_TARGET: readonly [number, number, number] = [0, -0.4, 0];
-export const GLOBAL_UP_VECTOR: readonly [number, number, number] = [0, 0.8, 0.6];
-export const OBLIQUE_CAMERA_POSITION: readonly [number, number, number] = [0, -3.6, 2.4];
-export const OBLIQUE_LOOK_TARGET: readonly [number, number, number] = [0, -1.2, 0];
+export const GLOBAL_CAMERA_POSITION: readonly [number, number, number] = [0, 0, 5.6];
+export const GLOBAL_LOOK_TARGET: readonly [number, number, number] = [0, 0, 0];
+export const GLOBAL_UP_VECTOR: readonly [number, number, number] = [0, 1, 0];
+export const OBLIQUE_CAMERA_POSITION: readonly [number, number, number] = [0, -3.2, 2.2];
+export const OBLIQUE_LOOK_TARGET: readonly [number, number, number] = [0, -0.8, 0];
 export const OBLIQUE_UP_VECTOR: readonly [number, number, number] = [0, 0.6, 0.8];
 export const SITE_CAMERA_ALTITUDE = 1.35;
 export const SITE_CAMERA_TILT = 0.35;
@@ -76,7 +76,7 @@ export function cameraPoseForPreset(preset: CameraPreset, site: CandidateSite): 
   }
 
   if (preset === 'global') {
-    // Global context: complete Moon with safe margins and clear view of southern candidate region
+    // Global context: complete Moon with safe margins and clear view
     return {
       camPos: new THREE.Vector3(...GLOBAL_CAMERA_POSITION),
       lookTarget: new THREE.Vector3(...GLOBAL_LOOK_TARGET),
@@ -120,8 +120,8 @@ export function cameraPoseForPreset(preset: CameraPreset, site: CandidateSite): 
 
   if (preset === 'overhead') {
     // High-Angle Overhead Landing Zone: Top-down tactical nadir perspective on candidate
-    // Distance 0.14 scene units with Local North pointing up on screen
-    const distance = 0.14;
+    // Distance 0.12 scene units with Local North pointing up on screen
+    const distance = 0.12;
     const camPos = surfacePos
       .clone()
       .add(normal.clone().multiplyScalar(distance))
@@ -137,19 +137,20 @@ export function cameraPoseForPreset(preset: CameraPreset, site: CandidateSite): 
   if (preset === 'horizon') {
     // Ground-Level Horizon Perspective: Low-altitude view looking outward across the crater horizon
     // Simulates lander/astronaut eye-level looking toward the illuminated horizon
+    // Target is anchored closely to the local ridge to ensure stable, intuitive orbit rotation
     const camPos = surfacePos
       .clone()
-      .add(normal.clone().multiplyScalar(0.015))
-      .add(north.clone().multiplyScalar(-0.025));
+      .add(normal.clone().multiplyScalar(0.016))
+      .add(north.clone().multiplyScalar(-0.028));
     const lookTarget = surfacePos
       .clone()
-      .add(north.clone().multiplyScalar(0.065))
+      .add(north.clone().multiplyScalar(0.035))
       .add(normal.clone().multiplyScalar(0.008));
 
     return {
       camPos,
       lookTarget,
-      upVector: normal.clone(),
+      upVector: normal.clone().normalize(),
     };
   }
 
@@ -193,11 +194,21 @@ export function createCameraTransitioner(): CameraTransitioner {
       if (camera.up.lengthSq() > 1e-4) {
         camera.up.normalize();
       }
+      camera.lookAt(controls.target);
 
       if (target.progress >= 1.0) {
         camera.position.copy(target.camPos);
         controls.target.copy(target.lookTarget);
         camera.up.copy(target.upVector).normalize();
+        camera.lookAt(controls.target);
+
+        if ((controls as any)._quat && (controls as any)._quatInverse) {
+          (controls as any)._quat.setFromUnitVectors(camera.up, new THREE.Vector3(0, 1, 0));
+          (controls as any)._quatInverse.copy((controls as any)._quat).invert();
+        }
+        (controls as any)._sphericalDelta?.set(0, 0, 0);
+        (controls as any)._panOffset?.set(0, 0, 0);
+        (controls as any)._scale = 1;
         if (typeof controls.update === 'function') {
           controls.update();
         }
