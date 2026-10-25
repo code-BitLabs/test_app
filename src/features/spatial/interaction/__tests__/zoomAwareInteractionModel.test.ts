@@ -27,14 +27,14 @@ test('Zoom-Aware 3D Orbit: Monotonically scales sensitivity from global down to 
   // At global scale, rotateSpeed reaches max (1.0)
   assert.ok(regionalSens.rotateSpeed >= 0.95 && regionalSens.rotateSpeed <= 1.0);
 
-  // At maximum zoom, rotateSpeed drops to ~0.065 - 0.08
+  // At maximum zoom, rotateSpeed drops to ~0.20 - 0.25 (scaled down by ~4x-5x from 1.0)
   assert.ok(
     maxZoomSens.rotateSpeed >= DEFAULT_ORBIT_SENSITIVITY_CONFIG.minRotateSpeed,
     `Rotate speed ${maxZoomSens.rotateSpeed} must be >= min ${DEFAULT_ORBIT_SENSITIVITY_CONFIG.minRotateSpeed}`
   );
   assert.ok(
-    maxZoomSens.rotateSpeed < 0.10,
-    `Rotate speed ${maxZoomSens.rotateSpeed} at maximum zoom must be < 0.10 to prevent violent swings`
+    maxZoomSens.rotateSpeed < 0.35,
+    `Rotate speed ${maxZoomSens.rotateSpeed} at maximum zoom must be < 0.35 to prevent violent swings`
   );
 });
 
@@ -46,33 +46,33 @@ test('Zoom-Aware 3D Orbit: Angular displacement per pixel remains strictly bound
   // theta = (2 * PI * 50 / 900) * rotateSpeed
   const disp50pxDeg = (maxZoomSens.estimatedAngularDisplacementDegPer100Px / 100) * 50;
 
-  // With rotateSpeed ~0.07, 50px drag produces only ~1.4° rotation (instead of 20°!)
+  // With rotateSpeed ~0.23, 50px drag produces ~4.7° rotation (controlled, not 20° and not stuck at 0.5°!)
   assert.ok(
-    disp50pxDeg < 2.5,
-    `50px drag displacement at maximum zoom should be < 2.5°, was ${disp50pxDeg.toFixed(2)}°`
+    disp50pxDeg < 8.0,
+    `50px drag displacement at maximum zoom should be < 8.0°, was ${disp50pxDeg.toFixed(2)}°`
   );
   assert.ok(
-    disp50pxDeg > 0.5,
-    `50px drag displacement should be > 0.5° for responsive control, was ${disp50pxDeg.toFixed(2)}°`
+    disp50pxDeg > 2.0,
+    `50px drag displacement should be > 2.0° for responsive control, was ${disp50pxDeg.toFixed(2)}°`
   );
 
-  // For a tiny 5px twitch, angular displacement is < 0.25°
+  // For a tiny 5px twitch, angular displacement is < 0.60°
   const disp5pxDeg = (maxZoomSens.estimatedAngularDisplacementDegPer100Px / 100) * 5;
   assert.ok(
-    disp5pxDeg < 0.30,
-    `5px twitch displacement should be < 0.30°, was ${disp5pxDeg.toFixed(3)}°`
+    disp5pxDeg < 0.60,
+    `5px twitch displacement should be < 0.60°, was ${disp5pxDeg.toFixed(3)}°`
   );
 });
 
-test('Zoom-Aware 3D Orbit: Damping increases at surface scale to prevent inertia overshoot', () => {
+test('Zoom-Aware 3D Orbit: Damping increases at surface scale to prevent inertia overshoot without sluggish lag', () => {
   const globalSens = calculate3DOrbitSensitivity(5.0);
   const maxZoomSens = calculate3DOrbitSensitivity(0.015);
 
   assert.ok(
-    maxZoomSens.dampingFactor > globalSens.dampingFactor,
-    `Damping at max zoom (${maxZoomSens.dampingFactor}) should exceed global damping (${globalSens.dampingFactor})`
+    maxZoomSens.dampingFactor >= globalSens.dampingFactor,
+    `Damping at max zoom (${maxZoomSens.dampingFactor}) should be >= global damping (${globalSens.dampingFactor})`
   );
-  assert.ok(maxZoomSens.dampingFactor >= 0.12, 'Surface damping should be >= 0.12 to lock view on target');
+  assert.ok(maxZoomSens.dampingFactor <= 0.10, 'Surface damping should be <= 0.10 to prevent sluggish lag');
 });
 
 test('Zoom-Aware 3D Orbit: Defensively handles non-finite or degenerate distances', () => {
@@ -88,15 +88,13 @@ test('Zoom-Aware 3D Orbit: Defensively handles non-finite or degenerate distance
   assert.ok(negSens.rotateSpeed >= DEFAULT_ORBIT_SENSITIVITY_CONFIG.minRotateSpeed);
 });
 
-test('Zoom-Aware 2D Pan: Damps high-frequency pan displacement as zoom increases', () => {
+test('Zoom-Aware 2D Pan: Preserves 1:1 grab-and-drag cursor tracking while scaling physical distance', () => {
   const basePan = calculate2DPanSensitivity(1.0);
   const mediumPan = calculate2DPanSensitivity(2.5);
   const maxPan = calculate2DPanSensitivity(4.5);
 
   assert.equal(basePan.panMultiplier, 1.0, 'At zoom 1.0, pan multiplier is 1.0');
-  assert.ok(basePan.panMultiplier > mediumPan.panMultiplier);
-  assert.ok(mediumPan.panMultiplier > maxPan.panMultiplier);
-  assert.ok(maxPan.panMultiplier >= 0.45, 'Pan multiplier should remain comfortable (>= 0.45)');
+  assert.equal(maxPan.panMultiplier, 1.0, 'At zoom 4.5, pan multiplier remains 1.0 for 1:1 tracking');
   assert.ok(basePan.worldKmPerScreenPixel > maxPan.worldKmPerScreenPixel, 'Higher zoom yields smaller km per pixel');
 });
 
@@ -108,10 +106,10 @@ test('Zoom-Aware 2D Pan: computeZoomAwarePan calculates symmetric, container-nor
   assert.equal(delta1x.x, 40);
   assert.equal(delta1x.y, 40);
 
-  // At zoom 4.5, pan is dampened
+  // At zoom 4.5, 1:1 cursor tracking is preserved
   const delta4x = computeZoomAwarePan(startOrigin, currentClient.x, currentClient.y, 4.5, 600, 600);
-  assert.ok(delta4x.x < delta1x.x, 'Zoom 4.5 pan should be damped');
-  assert.equal(delta4x.x, delta4x.y, 'X and Y displacement must be symmetric');
+  assert.equal(delta4x.x, 40);
+  assert.equal(delta4x.y, 40);
 
   // Container scaling compensation (e.g. 300px split view)
   const deltaSplit = computeZoomAwarePan(startOrigin, currentClient.x, currentClient.y, 1.0, 300, 600);

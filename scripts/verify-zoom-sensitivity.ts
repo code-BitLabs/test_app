@@ -141,19 +141,19 @@ async function run() {
   console.log(`Test A: 30px Drag Angular Rotation = ${rotAngleDegA.toFixed(3)}°`);
 
   // Assertions for Test A:
-  // 1. rotateSpeed must be scaled down dynamically (< 0.15 at close zoom)
-  // 2. 30px drag must produce small, bounded rotation (< 1.5°) so orientation is preserved
+  // 1. rotateSpeed must be scaled down dynamically (< 0.35 at close zoom vs 1.0 at global)
+  // 2. 30px drag must produce small, bounded rotation (< 5.0°) so orientation is preserved without being stuck
   // 3. No NaN values in camera or target
   const passedA =
-    postStateA.rotateSpeed <= 0.15 &&
-    rotAngleDegA < 1.5 &&
-    rotAngleDegA > 0.05 &&
+    postStateA.rotateSpeed <= 0.35 &&
+    rotAngleDegA < 5.0 &&
+    rotAngleDegA > 0.1 &&
     Number.isFinite(postStateA.camPos[0]);
 
   results.push({
     name: 'Test A — 3D Maximum-Zoom Precision',
     passed: passedA,
-    details: `rotateSpeed: ${postStateA.rotateSpeed.toFixed(4)} (expected <= 0.15), 30px drag: ${rotAngleDegA.toFixed(3)}° (expected < 1.5°)`,
+    details: `rotateSpeed: ${postStateA.rotateSpeed.toFixed(4)} (expected <= 0.35), 30px drag: ${rotAngleDegA.toFixed(3)}° (expected < 5.0°)`,
   });
 
   // ==========================================
@@ -265,8 +265,8 @@ async function run() {
   const passedD =
     horizonState !== null &&
     overheadState !== null &&
-    horizonState.rotateSpeed <= 0.15 &&
-    overheadState.rotateSpeed <= 0.20 &&
+    horizonState.rotateSpeed <= 0.30 &&
+    overheadState.rotateSpeed <= 0.35 &&
     Number.isFinite(horizonState.camPos[0]) &&
     Number.isFinite(overheadState.camPos[0]);
 

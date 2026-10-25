@@ -32,13 +32,13 @@ export interface OrbitSensitivityConfig {
 }
 
 export const DEFAULT_ORBIT_SENSITIVITY_CONFIG: OrbitSensitivityConfig = {
-  minRotateSpeed: 0.048,
+  minRotateSpeed: 0.20,
   maxRotateSpeed: 1.0,
   refCameraDistance: 4.8,
   exponent: 0.68,
   minDampingFactor: 0.05,
-  maxDampingFactor: 0.22,
-  minPanSpeed: 0.10,
+  maxDampingFactor: 0.08,
+  minPanSpeed: 0.15,
   maxPanSpeed: 1.0,
 };
 
@@ -144,16 +144,16 @@ export function calculate2DPanSensitivity(
   const screenPixelPerSvgUnit = safeRenderedWidth / svgSize;
   const svgUnitPerScreenPixel = svgSize / safeRenderedWidth;
 
-  // Zoom-scaled damping: as zoom increases beyond 1.0, micro-damping ensures small hand tremors
-  // do not flick candidate craters out of view while maintaining 1:1 cursor tracking feel.
-  const zoomDamping = safeZoom <= 1.0 ? 1.0 : Math.max(0.45, Math.min(1.0, 1.0 / Math.pow(safeZoom, 0.35)));
+  // Intuitive 1:1 screen-to-map tracking ensures that the grabbed terrain point sticks
+  // precisely to the cursor across all zoom levels without slipping or lag.
+  const panMultiplier = 1.0;
 
   // Physical lunar scale: 260 SVG units corresponds to 7 degrees latitude (~212.3 km)
   const KM_PER_SVG_UNIT = 212.3 / 260.0;
   const worldKmPerScreenPixel = (svgUnitPerScreenPixel * KM_PER_SVG_UNIT) / safeZoom;
 
   return {
-    panMultiplier: zoomDamping,
+    panMultiplier,
     effectiveZoom: safeZoom,
     screenPixelPerSvgUnit,
     svgUnitPerScreenPixel,
