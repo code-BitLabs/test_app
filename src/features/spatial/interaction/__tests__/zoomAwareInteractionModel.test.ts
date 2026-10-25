@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   calculate3DOrbitSensitivity,
   calculate2DPanSensitivity,
+  computeZoomAwarePan,
   DEFAULT_ORBIT_SENSITIVITY_CONFIG,
 } from '../zoomAwareInteractionModel';
 
@@ -96,4 +97,23 @@ test('Zoom-Aware 2D Pan: Damps high-frequency pan displacement as zoom increases
   assert.ok(basePan.panMultiplier > mediumPan.panMultiplier);
   assert.ok(mediumPan.panMultiplier > maxPan.panMultiplier);
   assert.ok(maxPan.panMultiplier >= 0.45, 'Pan multiplier should remain comfortable (>= 0.45)');
+  assert.ok(basePan.worldKmPerScreenPixel > maxPan.worldKmPerScreenPixel, 'Higher zoom yields smaller km per pixel');
+});
+
+test('Zoom-Aware 2D Pan: computeZoomAwarePan calculates symmetric, container-normalized displacement', () => {
+  const startOrigin = { x: 100, y: 150 };
+  const currentClient = { x: 140, y: 190 }; // +40px X, +40px Y
+
+  const delta1x = computeZoomAwarePan(startOrigin, currentClient.x, currentClient.y, 1.0, 600, 600);
+  assert.equal(delta1x.x, 40);
+  assert.equal(delta1x.y, 40);
+
+  // At zoom 4.5, pan is dampened
+  const delta4x = computeZoomAwarePan(startOrigin, currentClient.x, currentClient.y, 4.5, 600, 600);
+  assert.ok(delta4x.x < delta1x.x, 'Zoom 4.5 pan should be damped');
+  assert.equal(delta4x.x, delta4x.y, 'X and Y displacement must be symmetric');
+
+  // Container scaling compensation (e.g. 300px split view)
+  const deltaSplit = computeZoomAwarePan(startOrigin, currentClient.x, currentClient.y, 1.0, 300, 600);
+  assert.equal(deltaSplit.x, 80, '300px container scales SVG units by 2.0x');
 });

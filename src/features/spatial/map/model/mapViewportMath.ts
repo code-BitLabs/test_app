@@ -61,6 +61,54 @@ export function clampPan(pan: { x: number; y: number }, zoom: number, center: nu
 }
 
 /**
+ * Calculates updated pan and zoom when zooming focused around a specific rendered SVG/screen point (e.g. mouse cursor).
+ * Ensures the geographical point under the cursor remains invariant during zooming.
+ */
+export function zoomAroundScreenPoint(
+  currentViewport: MapViewport,
+  targetZoom: number,
+  screenPoint: { x: number; y: number },
+  center: number = 300,
+): MapViewport {
+  const newZoom = clampZoom(targetZoom);
+  if (currentViewport.zoom === newZoom) return currentViewport;
+
+  const ratio = newZoom / currentViewport.zoom;
+  const newPanX = (screenPoint.x - center) * (1 - ratio) + currentViewport.pan.x * ratio;
+  const newPanY = (screenPoint.y - center) * (1 - ratio) + currentViewport.pan.y * ratio;
+
+  return {
+    zoom: newZoom,
+    pan: clampPan({ x: newPanX, y: newPanY }, newZoom, center),
+  };
+}
+
+/**
+ * Calculates updated pan and zoom when zooming focused around an untransformed world coordinate (e.g. candidate site).
+ * Ensures the candidate site remains invariant on screen during zooming.
+ */
+export function zoomAroundWorldPoint(
+  currentViewport: MapViewport,
+  targetZoom: number,
+  worldPoint: { x: number; y: number },
+  center: number = 300,
+): MapViewport {
+  const newZoom = clampZoom(targetZoom);
+  if (currentViewport.zoom === newZoom) return currentViewport;
+
+  const zoomDelta = currentViewport.zoom - newZoom;
+  const newPanX = currentViewport.pan.x + (worldPoint.x - center) * zoomDelta;
+  const newPanY = currentViewport.pan.y + (worldPoint.y - center) * zoomDelta;
+
+  return {
+    zoom: newZoom,
+    pan: clampPan({ x: newPanX, y: newPanY }, newZoom, center),
+  };
+}
+
+export const zoomAroundFocalPoint = zoomAroundScreenPoint;
+
+/**
  * Computes the optimal viewport to fit all candidate sites with comfortable margin.
  */
 export function computeFitAllViewport(center: number): MapViewport {

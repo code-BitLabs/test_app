@@ -9,11 +9,8 @@ async function run() {
   }
 
   console.log('Launching Chromium for comprehensive 3D Lab verification...');
-  const executablePath =
-    '/ms-playwright/chromium_headless_shell-1247/chrome-headless-shell-linux64/chrome-headless-shell';
   const browser = await chromium.launch({
     headless: true,
-    executablePath,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
   });
 

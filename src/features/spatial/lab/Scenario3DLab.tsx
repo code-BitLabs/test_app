@@ -313,7 +313,7 @@ export function Scenario3DLab() {
                 sunElevationDeg={conditions.sunElevationDeg ? availableValue(conditions.sunElevationDeg) ?? -1.29 : -1.29}
                 sunAzimuthDeg={conditions.sunAzimuthDeg ? availableValue(conditions.sunAzimuthDeg) ?? 52.9 : 52.9}
                 earthElevationDeg={conditions.earthElevationDeg}
-                onEnterLocalInspection={() => selectCameraPreset('oblique')}
+                onEnterLocalInspection={() => selectCameraPreset('inspection')}
                 currentMode={preferences.cameraPreset === 'oblique' || preferences.cameraPreset === 'inspection' ? 'inspection' : preferences.cameraPreset === 'site' ? 'overview' : 'regional'}
               />
             </div>
@@ -406,7 +406,7 @@ export function Scenario3DLab() {
               <button
                 type="button"
                 data-testid="preset-oblique"
-                onClick={() => selectCameraPreset('oblique')}
+                onClick={() => selectCameraPreset('inspection')}
                 className={`flex items-center gap-1 px-2 py-1 text-xs rounded-[var(--lm-radius-xs)] font-medium transition-colors ${
                   preferences.cameraPreset === 'oblique' || preferences.cameraPreset === 'inspection'
                     ? 'bg-[var(--lm-color-surface-strong)] text-[var(--lm-color-sun)] border border-[var(--lm-color-sun)]/60 font-semibold'

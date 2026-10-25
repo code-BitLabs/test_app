@@ -252,8 +252,39 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
       }
     }
 
+    // Adaptive focal point anchoring near lunar surface:
+    // When zooming in from global/regional view toward the Moon, anchor controls.target to the surface
+    // along the line of sight. This eliminates violent lateral swings and centers orbit rotation on the terrain.
+    if (!transitioner.isTransitioning()) {
+      const targetLen = globe.controls.target.length();
+      if (targetLen < 0.6 && camDist < 2.8) {
+        const camDir = new THREE.Vector3();
+        globe.camera.getWorldDirection(camDir);
+        const b = 2 * camPos.dot(camDir);
+        const c = camDist * camDist - MOON_SCENE_RADIUS * MOON_SCENE_RADIUS;
+        const disc = b * b - 4 * c;
+        if (disc >= 0) {
+          const s = (-b - Math.sqrt(disc)) / 2;
+          if (s > 0) {
+            globe.controls.target.copy(camPos).addScaledVector(camDir, s);
+          } else {
+            globe.controls.target.copy(camPos).multiplyScalar(MOON_SCENE_RADIUS / camDist);
+          }
+        } else {
+          globe.controls.target.copy(camPos).multiplyScalar(MOON_SCENE_RADIUS / camDist);
+        }
+      } else if (targetLen > 0.6 && camDist > 3.6 && globe.controls.target.distanceTo(camPos) > 3.2) {
+        globe.controls.target.set(0, 0, 0);
+      }
+    }
+
     // Dynamic scale-aware near clipping plane and deep-zoom overlay auto-decluttering
-    const distToTarget = globe.camera.position.distanceTo(globe.controls.target);
+    const rawDistToTarget = globe.camera.position.distanceTo(globe.controls.target);
+    const surfaceAltitude = Math.max(0.015, camDist - MOON_SCENE_RADIUS);
+    const distToTarget = globe.controls.target.length() < 0.6
+      ? Math.min(rawDistToTarget, surfaceAltitude)
+      : rawDistToTarget;
+
     polarTerrain.updateLOD(distToTarget);
 
     // Dynamically scale OrbitControls sensitivity to zoom level:

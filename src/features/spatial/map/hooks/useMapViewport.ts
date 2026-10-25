@@ -21,6 +21,8 @@ import {
   presetViewport,
   steppedZoom,
   wheelZoom,
+  zoomAroundScreenPoint,
+  zoomAroundWorldPoint,
   type MapViewport,
 } from '@/features/spatial/map/model/mapViewportMath';
 
@@ -39,6 +41,7 @@ export function useMapViewport(sitePos: ProjectedPoint) {
   const [viewport, setViewport] = useState<MapViewport>(REGIONAL_VIEWPORT);
   const [activePreset, setActivePreset] = useState<MapZoomPreset | 'custom'>('regional');
   const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
   const [cursorCoord, setCursorCoord] = useState<SelenographicCoordinate | null>(null);
   const dragStartRef = useRef({ startX: 0, startY: 0, startPanX: 0, startPanY: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
@@ -74,17 +77,18 @@ export function useMapViewport(sitePos: ProjectedPoint) {
 
   const zoomIn = useCallback(() => {
     setActivePreset('custom');
-    setViewport((current) => ({ ...current, zoom: steppedZoom(current.zoom, 1) }));
-  }, []);
+    setViewport((current) => zoomAroundWorldPoint(current, steppedZoom(current.zoom, 1), sitePos, MAP_CENTER));
+  }, [sitePos]);
 
   const zoomOut = useCallback(() => {
     setActivePreset('custom');
-    setViewport((current) => ({ ...current, zoom: steppedZoom(current.zoom, -1) }));
-  }, []);
+    setViewport((current) => zoomAroundWorldPoint(current, steppedZoom(current.zoom, -1), sitePos, MAP_CENTER));
+  }, [sitePos]);
 
   const handleMouseDown = useCallback(
     (event: ReactMouseEvent) => {
       if (event.button !== 0) return;
+      isDraggingRef.current = true;
       setIsDragging(true);
       dragStartRef.current = {
         startX: event.clientX,
@@ -93,19 +97,25 @@ export function useMapViewport(sitePos: ProjectedPoint) {
         startPanY: viewport.pan.y,
       };
     },
-    [viewport],
+    [viewport.pan.x, viewport.pan.y],
   );
 
   const handleMouseMove = useCallback(
     (event: ReactMouseEvent) => {
-      if (isDragging) {
+      if (isDraggingRef.current) {
         setActivePreset('custom');
         const rect = svgRef.current?.getBoundingClientRect();
         const renderedWidth = rect && rect.width > 0 ? rect.width : SVG_SIZE;
+        const renderedHeight = rect && rect.height > 0 ? rect.height : SVG_SIZE;
+        const renderedExtent = Math.min(renderedWidth, renderedHeight);
         setViewport((current) => {
-          const { panMultiplier } = calculate2DPanSensitivity(current.zoom, renderedWidth, SVG_SIZE);
-          const deltaX = (event.clientX - dragStartRef.current.startX) * panMultiplier;
-          const deltaY = (event.clientY - dragStartRef.current.startY) * panMultiplier;
+          const { panMultiplier, svgUnitPerScreenPixel } = calculate2DPanSensitivity(
+            current.zoom,
+            renderedExtent,
+            SVG_SIZE,
+          );
+          const deltaX = (event.clientX - dragStartRef.current.startX) * svgUnitPerScreenPixel * panMultiplier;
+          const deltaY = (event.clientY - dragStartRef.current.startY) * svgUnitPerScreenPixel * panMultiplier;
           const rawPan = {
             x: dragStartRef.current.startPanX + deltaX,
             y: dragStartRef.current.startPanY + deltaY,
@@ -116,21 +126,53 @@ export function useMapViewport(sitePos: ProjectedPoint) {
       }
       setCursorCoord(coordinateFromEvent(event));
     },
-    [isDragging, coordinateFromEvent],
+    [coordinateFromEvent],
   );
 
-  const handleMouseUp = useCallback(() => setIsDragging(false), []);
+  const handleMouseUp = useCallback(() => {
+    isDraggingRef.current = false;
+    setIsDragging(false);
+  }, []);
 
   const handleMouseLeave = useCallback(() => {
+    isDraggingRef.current = false;
     setIsDragging(false);
     setCursorCoord(null);
   }, []);
 
-  const handleWheel = useCallback((event: ReactWheelEvent) => {
-    event.preventDefault();
-    setActivePreset('custom');
-    setViewport((current) => ({ ...current, zoom: wheelZoom(current.zoom, event.deltaY) }));
-  }, []);
+  const handleWheel = useCallback(
+    (event: ReactWheelEvent) => {
+      event.preventDefault();
+      setActivePreset('custom');
+      const rect = svgRef.current?.getBoundingClientRect();
+      const targetZoom = wheelZoom(viewport.zoom, event.deltaY);
+
+      if (rect && rect.width > 0 && rect.height > 0) {
+        const renderedExtent = Math.min(rect.width, rect.height);
+        let renderedLeft = rect.left;
+        let renderedTop = rect.top;
+        if (rect.width > rect.height) {
+          renderedLeft += (rect.width - renderedExtent) / 2;
+        } else if (rect.height > rect.width) {
+          renderedTop += (rect.height - renderedExtent) / 2;
+        }
+
+        const focalSvgX = ((event.clientX - renderedLeft) * SVG_SIZE) / renderedExtent;
+        const focalSvgY = ((event.clientY - renderedTop) * SVG_SIZE) / renderedExtent;
+
+        setViewport((current) =>
+          zoomAroundScreenPoint(current, targetZoom, { x: focalSvgX, y: focalSvgY }, MAP_CENTER),
+        );
+      } else {
+        setViewport((current) => ({
+          ...current,
+          zoom: targetZoom,
+          pan: clampPan(current.pan, targetZoom, MAP_CENTER),
+        }));
+      }
+    },
+    [viewport.zoom],
+  );
 
   /** Transform for the pannable <g>, frozen while dragging so the map tracks the cursor. */
   const viewportStyle = useMemo(

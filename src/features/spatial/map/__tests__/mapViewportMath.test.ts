@@ -18,6 +18,9 @@ import {
   wheelZoom,
   clampPan,
   computeFitAllViewport,
+  zoomAroundScreenPoint,
+  zoomAroundWorldPoint,
+  zoomAroundFocalPoint,
 } from '@/features/spatial/map/model/mapViewportMath';
 import { DEFAULT_PROJECTION_CONFIG } from '@/domain/coordinates/projection';
 
@@ -180,4 +183,44 @@ test('coordinateFromPointer handles widescreen aspect ratio letterboxing accurat
     viewport,
   });
   assert.equal(outsideBar, null);
+});
+
+test('zoomAroundWorldPoint preserves candidate site on screen across zoom levels', () => {
+  const currentViewport = { zoom: 1.5, pan: { x: 30, y: -20 } };
+  const worldPoint = { x: 380, y: 220 }; // off-center candidate site
+
+  // Calculate screen position of world point before zoom
+  const screenBeforeX = currentViewport.pan.x + CENTER + (worldPoint.x - CENTER) * currentViewport.zoom;
+  const screenBeforeY = currentViewport.pan.y + CENTER + (worldPoint.y - CENTER) * currentViewport.zoom;
+
+  // Zoom in to 3.0 focused on world candidate
+  const zoomedViewport = zoomAroundWorldPoint(currentViewport, 3.0, worldPoint, CENTER);
+
+  // Calculate screen position of world point after zoom
+  const screenAfterX = zoomedViewport.pan.x + CENTER + (worldPoint.x - CENTER) * zoomedViewport.zoom;
+  const screenAfterY = zoomedViewport.pan.y + CENTER + (worldPoint.y - CENTER) * zoomedViewport.zoom;
+
+  assert.ok(Math.abs(screenBeforeX - screenAfterX) < 1e-4, 'World candidate X must stay identical on screen');
+  assert.ok(Math.abs(screenBeforeY - screenAfterY) < 1e-4, 'World candidate Y must stay identical on screen');
+  assert.equal(zoomedViewport.zoom, 3.0);
+});
+
+test('zoomAroundScreenPoint preserves point under mouse cursor across wheel zoom levels', () => {
+  const currentViewport = { zoom: 1.2, pan: { x: 40, y: -30 } };
+  const cursorScreenSvg = { x: 420, y: 180 }; // mouse pointer on screen
+
+  // Invert cursor to world point before zoom
+  const worldX = (cursorScreenSvg.x - CENTER - currentViewport.pan.x) / currentViewport.zoom + CENTER;
+  const worldY = (cursorScreenSvg.y - CENTER - currentViewport.pan.y) / currentViewport.zoom + CENTER;
+
+  // Zoom to 2.4 around cursor
+  const zoomedViewport = zoomAroundScreenPoint(currentViewport, 2.4, cursorScreenSvg, CENTER);
+
+  // Project world point back to screen after zoom
+  const newScreenX = zoomedViewport.pan.x + CENTER + (worldX - CENTER) * zoomedViewport.zoom;
+  const newScreenY = zoomedViewport.pan.y + CENTER + (worldY - CENTER) * zoomedViewport.zoom;
+
+  assert.ok(Math.abs(newScreenX - cursorScreenSvg.x) < 1e-4, 'Cursor X must stay identical');
+  assert.ok(Math.abs(newScreenY - cursorScreenSvg.y) < 1e-4, 'Cursor Y must stay identical');
+  assert.equal(zoomedViewport.zoom, 2.4);
 });

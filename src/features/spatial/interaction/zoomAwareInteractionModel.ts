@@ -32,13 +32,13 @@ export interface OrbitSensitivityConfig {
 }
 
 export const DEFAULT_ORBIT_SENSITIVITY_CONFIG: OrbitSensitivityConfig = {
-  minRotateSpeed: 0.065,
+  minRotateSpeed: 0.048,
   maxRotateSpeed: 1.0,
   refCameraDistance: 4.8,
-  exponent: 0.72,
+  exponent: 0.68,
   minDampingFactor: 0.05,
-  maxDampingFactor: 0.14,
-  minPanSpeed: 0.12,
+  maxDampingFactor: 0.22,
+  minPanSpeed: 0.10,
   maxPanSpeed: 1.0,
 };
 
@@ -49,6 +49,8 @@ export interface Orbit3DSensitivity {
   zoomSpeed: number;
   cameraDistance: number;
   estimatedAngularDisplacementDegPer100Px: number;
+  angularDisplacementPerPixelDeg: number;
+  linearTerrainDisplacementPerPixelUnits: number;
 }
 
 /**
@@ -59,7 +61,7 @@ export interface Orbit3DSensitivity {
  * speed = minSpeed + (maxSpeed - minSpeed) * (normalizedDist ^ exponent)
  *
  * At global scale (dist ~5.0): rotateSpeed ~ 1.0, 100px drag rotates ~40° across full globe.
- * At close zoom (dist ~0.015): rotateSpeed ~ 0.07, 100px drag rotates ~2.8° (micro-precision).
+ * At close zoom (dist ~0.015): rotateSpeed ~ 0.067, 100px drag rotates ~2.7° (micro-precision).
  */
 export function calculate3DOrbitSensitivity(
   cameraDistanceToTarget: number,
@@ -89,16 +91,21 @@ export function calculate3DOrbitSensitivity(
   // At surface zoom, damping factor increases so camera locks crisply onto target without inertia overshoot
   const dampingFactor = Math.max(
     config.minDampingFactor,
-    Math.min(config.maxDampingFactor, config.maxDampingFactor - (config.maxDampingFactor - config.minDampingFactor) * Math.min(1.0, distRatio * 1.5)),
+    Math.min(
+      config.maxDampingFactor,
+      config.maxDampingFactor - (config.maxDampingFactor - config.minDampingFactor) * Math.min(1.0, distRatio * 1.5),
+    ),
   );
 
   // Zoom speed slows slightly at close range to give fine stepped depth control
-  const zoomSpeed = Math.max(0.70, Math.min(1.0, 0.70 + 0.30 * Math.min(1.0, distRatio * 2.0)));
+  const zoomSpeed = Math.max(0.55, Math.min(1.0, 0.55 + 0.45 * Math.min(1.0, distRatio * 2.0)));
 
   // Theoretical angular displacement for a 100px drag across this viewport:
   // theta = (2 * PI * 100 / viewportHeight) * rotateSpeed (in radians)
   const angularDispRad = ((2 * Math.PI * 100) / safeHeight) * rotateSpeed;
   const estimatedAngularDisplacementDegPer100Px = (angularDispRad * 180) / Math.PI;
+  const angularDisplacementPerPixelDeg = estimatedAngularDisplacementDegPer100Px / 100;
+  const linearTerrainDisplacementPerPixelUnits = safeDist * (angularDispRad / 100);
 
   return {
     rotateSpeed,
@@ -107,6 +114,8 @@ export function calculate3DOrbitSensitivity(
     zoomSpeed,
     cameraDistance: safeDist,
     estimatedAngularDisplacementDegPer100Px,
+    angularDisplacementPerPixelDeg,
+    linearTerrainDisplacementPerPixelUnits,
   };
 }
 
@@ -114,6 +123,8 @@ export interface Map2DPanSensitivity {
   panMultiplier: number;
   effectiveZoom: number;
   screenPixelPerSvgUnit: number;
+  svgUnitPerScreenPixel: number;
+  worldKmPerScreenPixel: number;
 }
 
 /**
@@ -131,15 +142,22 @@ export function calculate2DPanSensitivity(
   const safeRenderedWidth = Number.isFinite(renderedWidth) && renderedWidth > 0 ? renderedWidth : svgSize;
 
   const screenPixelPerSvgUnit = safeRenderedWidth / svgSize;
+  const svgUnitPerScreenPixel = svgSize / safeRenderedWidth;
 
   // Zoom-scaled damping: as zoom increases beyond 1.0, micro-damping ensures small hand tremors
   // do not flick candidate craters out of view while maintaining 1:1 cursor tracking feel.
   const zoomDamping = safeZoom <= 1.0 ? 1.0 : Math.max(0.45, Math.min(1.0, 1.0 / Math.pow(safeZoom, 0.35)));
 
+  // Physical lunar scale: 260 SVG units corresponds to 7 degrees latitude (~212.3 km)
+  const KM_PER_SVG_UNIT = 212.3 / 260.0;
+  const worldKmPerScreenPixel = (svgUnitPerScreenPixel * KM_PER_SVG_UNIT) / safeZoom;
+
   return {
     panMultiplier: zoomDamping,
     effectiveZoom: safeZoom,
     screenPixelPerSvgUnit,
+    svgUnitPerScreenPixel,
+    worldKmPerScreenPixel,
   };
 }
 
@@ -155,13 +173,13 @@ export function computeZoomAwarePan(
   renderedWidth = 600,
   svgSize = 600,
 ): { x: number; y: number } {
-  const { panMultiplier } = calculate2DPanSensitivity(zoom, renderedWidth, svgSize);
+  const { panMultiplier, svgUnitPerScreenPixel } = calculate2DPanSensitivity(zoom, renderedWidth, svgSize);
 
-  const deltaX = currentClientX - origin.x;
-  const deltaY = currentClientY - origin.y;
+  const deltaX = (currentClientX - origin.x) * svgUnitPerScreenPixel * panMultiplier;
+  const deltaY = (currentClientY - origin.y) * svgUnitPerScreenPixel * panMultiplier;
 
   return {
-    x: origin.x + deltaX * panMultiplier - origin.x + (origin.x - (origin.x - (currentClientX - origin.x) * panMultiplier)),
-    y: currentClientY - origin.y, // preserve standard draggedPan base contract
+    x: deltaX,
+    y: deltaY,
   };
 }
