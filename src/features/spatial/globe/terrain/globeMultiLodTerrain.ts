@@ -14,6 +14,15 @@
 import * as THREE from 'three';
 import { MOON_SCENE_RADIUS, latLonToVector3 } from '@/features/spatial/globe/scene/globeScene';
 import { CandidateSite } from '@/domain/sites/candidateSite';
+import {
+  sampleLolaElevationAtLatLon,
+  sampleTerrainAtLatLon,
+  getLolaElevationRgb,
+  getSlopeRgb,
+  getGeologyUnitRgb,
+  getIlluminationRgb,
+} from './lolaSouthPoleDemSampler';
+import { ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 
 const KM_TO_SCENE_UNITS = MOON_SCENE_RADIUS / 1737.4;
 
@@ -33,6 +42,7 @@ export interface MultiLodTerrainMesh {
   group: THREE.Group;
   updateLOD: (cameraDistanceToTarget: number) => void;
   updateSite: (site: CandidateSite) => void;
+  setScientificMode: (mode: ScientificMapLayerMode) => void;
   getDiagnostics: () => TerrainDiagnostics;
   getTerrainDiagnostics: () => TerrainDiagnostics;
   getSurfaceElevationAt: (latDeg: number, lonDeg: number) => number;
@@ -44,69 +54,7 @@ export interface MultiLodTerrainMesh {
  * grounded in NASA LOLA altimetry for south polar candidates.
  */
 function sampleLolaElevationMeters(site: CandidateSite, localLat: number, localLon: number): number {
-  const baseElev = site.coordinates.elevationMeters ?? 3800;
-
-  // Exact 3D point on unit sphere to eliminate polar coordinate singularities
-  const phi1 = (localLat * Math.PI) / 180;
-  const lam1 = (localLon * Math.PI) / 180;
-  const p1x = Math.cos(phi1) * Math.sin(lam1);
-  const p1y = Math.sin(phi1);
-  const p1z = Math.cos(phi1) * Math.cos(lam1);
-
-  // Shackleton Crater morphology (Crater center near 89.68°S, 125.0°E, diameter 21 km, rim crest radius ~11.2 km)
-  if (site.id === 'shackleton-rim' || site.id === 'connecting-ridge' || site.id === 'peak-near-shackleton') {
-    // 3D chord distance to Shackleton crater center
-    const cLat = -89.68;
-    const cLon = 125.0;
-    const cPhi = (cLat * Math.PI) / 180;
-    const cLam = (cLon * Math.PI) / 180;
-    const cx = Math.cos(cPhi) * Math.sin(cLam);
-    const cy = Math.sin(cPhi);
-    const cz = Math.cos(cPhi) * Math.cos(cLam);
-    const distToCenterKm = Math.sqrt((p1x - cx) ** 2 + (p1y - cy) ** 2 + (p1z - cz) ** 2) * 1737.4;
-
-    const rimRadiusKm = 11.2;
-    const floorRadiusKm = 6.0;
-
-    // Interior floor of Shackleton (PSR floor at -4,200m)
-    if (distToCenterKm <= floorRadiusKm) {
-      const floorNoise = Math.sin(p1x * 1200 + p1z * 1200) * 35;
-      return -4200 + floorNoise;
-    }
-
-    // Inner crater wall: smooth hyperbolic/cubic slope climbing from -4,200m to +4,250m
-    if (distToCenterKm < rimRadiusKm) {
-      const t = (distToCenterKm - floorRadiusKm) / (rimRadiusKm - floorRadiusKm);
-      const smoothT = t * t * (3 - 2 * t);
-      const wallElev = -4200 + smoothT * (4250 - (-4200));
-      return wallElev;
-    }
-
-    // Rim crest and exterior continuous ejecta blanket decaying smoothly to regional baseline (+1,400m)
-    const distFromRimKm = distToCenterKm - rimRadiusKm;
-    const ejectaDecay = Math.exp(-(distFromRimKm * distFromRimKm) / (16.0 * 16.0));
-    const regionalBaseline = 1400;
-    const outerElev = regionalBaseline + (4250 - regionalBaseline) * ejectaDecay;
-
-    // Organic lunar micro-relief
-    const micro = Math.sin(p1x * 600 + p1y * 300) * Math.cos(p1z * 600) * 25;
-    return outerElev + micro;
-  }
-
-  // Malapert Massif prominent peak profile (+5,100 m)
-  if (site.id === 'malapert-massif') {
-    const massifLat = -85.90;
-    const massifLon = 2.90;
-    const mPhi = (massifLat * Math.PI) / 180;
-    const mLam = (massifLon * Math.PI) / 180;
-    const mx = Math.cos(mPhi) * Math.sin(mLam);
-    const my = Math.sin(mPhi);
-    const mz = Math.cos(mPhi) * Math.cos(mLam);
-    const distKm = Math.sqrt((p1x - mx) ** 2 + (p1y - my) ** 2 + (p1z - mz) ** 2) * 1737.4;
-    return Math.max(1200, 5100 * Math.exp(-(distKm * distKm) / (18.0 * 18.0)));
-  }
-
-  return baseElev;
+  return sampleLolaElevationAtLatLon(localLat, localLon);
 }
 
 /**
@@ -116,7 +64,7 @@ function sampleLolaElevationMeters(site: CandidateSite, localLat: number, localL
 function buildTerrainPatchGeometry(
   site: CandidateSite,
   gridSegments: number,
-  patchRadiusKm: number = 75.0, // 75 km radius (150 km span) seamlessly framing the complete crater and ridge complex
+  patchRadiusKm: number = 105.0, // 105 km radius (210 km span) seamlessly framing the complete Artemis corridor
 ): THREE.BufferGeometry {
   const centerLat = site.coordinates.latitudeDeg;
   const centerLon = site.coordinates.longitudeDeg;
@@ -281,33 +229,70 @@ function buildTerrainPatchGeometry(
 
 /**
  * Creates high-fidelity regolith albedo data texture for the local terrain patch
- * using pure typed arrays with Moon Trek calibrated highland tones.
+ * blending calibrated highland regolith tones with authentic LOLA hillshade micro-contrast.
  */
-function createLocalRegolithTexture(): THREE.DataTexture {
+function createLocalRegolithTexture(site: CandidateSite, patchRadiusKm = 110.0): THREE.DataTexture {
   const width = 256;
   const height = 256;
   const data = new Uint8Array(width * height * 4);
 
-  // Moon Trek highland regolith albedo (~0.14 - 0.18 reflectance)
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = (y * width + x) * 4;
-      const grain = (Math.sin(x * 0.4) * Math.cos(y * 0.4) * 8) + ((Math.random() - 0.5) * 14);
-      const baseVal = Math.max(120, Math.min(220, 168 + grain));
+  const centerLat = site.coordinates.latitudeDeg;
+  const centerLon = site.coordinates.longitudeDeg;
+  const centerPos = latLonToVector3(centerLat, centerLon, 1.0).normalize();
 
-      // Neutral slightly warm lunar regolith color balance
-      data[idx] = baseVal;
-      data[idx + 1] = Math.max(0, Math.min(255, baseVal - 2));
-      data[idx + 2] = Math.max(0, Math.min(255, baseVal - 4));
+  const poleAxis = new THREE.Vector3(0, 1, 0);
+  let north = poleAxis.clone().sub(centerPos.clone().multiplyScalar(poleAxis.dot(centerPos)));
+  if (north.lengthSq() < 1e-6) {
+    const pm = new THREE.Vector3(0, 0, 1);
+    north = pm.clone().sub(centerPos.clone().multiplyScalar(pm.dot(centerPos)));
+  }
+  north.normalize();
+  const east = new THREE.Vector3().crossVectors(north, centerPos).normalize();
+  const moonRadiusKm = 1737.4;
+
+  for (let y = 0; y < height; y++) {
+    const v = y / (height - 1);
+    const yKm = (v - 0.5) * (2 * patchRadiusKm);
+
+    for (let x = 0; x < width; x++) {
+      const u = x / (width - 1);
+      const xKm = (u - 0.5) * (2 * patchRadiusKm);
+
+      const ptOnTangentKm = centerPos
+        .clone()
+        .multiplyScalar(moonRadiusKm)
+        .add(east.clone().multiplyScalar(xKm))
+        .add(north.clone().multiplyScalar(yKm));
+
+      const unitDir = ptOnTangentKm.normalize();
+      const lat = Math.asin(Math.max(-1, Math.min(1, unitDir.y))) * (180 / Math.PI);
+      let lon = Math.atan2(unitDir.x, unitDir.z) * (180 / Math.PI);
+      if (lon < 0) lon += 360;
+
+      const sample = sampleTerrainAtLatLon(lat, lon);
+
+      // Calibrated highland regolith albedo (~0.14 - 0.18 reflectance)
+      // Modulated by LOLA micro-hillshade and subtle stochastic regolith grain
+      const n1 = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+      const rand1 = n1 - Math.floor(n1);
+      const microGrain = (rand1 - 0.5) * 8;
+
+      const hillFactor = 0.5 + 0.55 * sample.hillshade;
+      const baseTone = 172 + microGrain;
+      const val = Math.max(30, Math.min(235, Math.round(baseTone * hillFactor)));
+
+      const idx = (y * width + x) * 4;
+      data[idx] = val;
+      data[idx + 1] = Math.max(0, val - 2);
+      data[idx + 2] = Math.max(0, val - 3);
       data[idx + 3] = 255;
     }
   }
 
   const texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(4, 4);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.generateMipmaps = true;
@@ -316,32 +301,170 @@ function createLocalRegolithTexture(): THREE.DataTexture {
 }
 
 /**
- * Creates micro-relief normal map data texture to bring out slope gradients and
- * fine regolith granular texture under grazing polar solar illumination.
+ * Creates analytical slope-gradient normal map data texture derived directly
+ * from spatial LOLA elevation derivatives (dz/dx, dz/dy).
  */
-function createLocalNormalTexture(): THREE.DataTexture {
+function createLocalNormalTexture(site: CandidateSite, patchRadiusKm = 110.0): THREE.DataTexture {
   const width = 256;
   const height = 256;
   const data = new Uint8Array(width * height * 4);
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = (y * width + x) * 4;
-      const dx = (Math.sin(x * 0.35 + y * 0.15) * 0.5 + (Math.random() - 0.5) * 0.3) * 32;
-      const dy = (Math.cos(y * 0.35 - x * 0.15) * 0.5 + (Math.random() - 0.5) * 0.3) * 32;
+  const centerLat = site.coordinates.latitudeDeg;
+  const centerLon = site.coordinates.longitudeDeg;
+  const centerPos = latLonToVector3(centerLat, centerLon, 1.0).normalize();
 
-      // Tangent space normal (Nx, Ny, Nz) mapped to [0, 255]
-      data[idx] = Math.max(0, Math.min(255, 128 + dx));
-      data[idx + 1] = Math.max(0, Math.min(255, 128 + dy));
-      data[idx + 2] = 245; // Predominantly facing up
+  const poleAxis = new THREE.Vector3(0, 1, 0);
+  let north = poleAxis.clone().sub(centerPos.clone().multiplyScalar(poleAxis.dot(centerPos)));
+  if (north.lengthSq() < 1e-6) {
+    const pm = new THREE.Vector3(0, 0, 1);
+    north = pm.clone().sub(centerPos.clone().multiplyScalar(pm.dot(centerPos)));
+  }
+  north.normalize();
+  const east = new THREE.Vector3().crossVectors(north, centerPos).normalize();
+  const moonRadiusKm = 1737.4;
+  const stepKm = (2 * patchRadiusKm) / (width - 1);
+
+  const sampleElev = (xKm: number, yKm: number): number => {
+    const pt = centerPos
+      .clone()
+      .multiplyScalar(moonRadiusKm)
+      .add(east.clone().multiplyScalar(xKm))
+      .add(north.clone().multiplyScalar(yKm));
+    const dir = pt.normalize();
+    const lat = Math.asin(Math.max(-1, Math.min(1, dir.y))) * (180 / Math.PI);
+    let lon = Math.atan2(dir.x, dir.z) * (180 / Math.PI);
+    if (lon < 0) lon += 360;
+    return sampleTerrainAtLatLon(lat, lon).elevationMeters;
+  };
+
+  const normalScale = 0.003; // Calibrated for smooth yet sculpted crater rim normal relief
+
+  for (let y = 0; y < height; y++) {
+    const v = y / (height - 1);
+    const yKm = (v - 0.5) * (2 * patchRadiusKm);
+
+    for (let x = 0; x < width; x++) {
+      const u = x / (width - 1);
+      const xKm = (u - 0.5) * (2 * patchRadiusKm);
+
+      const elevL = sampleElev(xKm - stepKm, yKm);
+      const elevR = sampleElev(xKm + stepKm, yKm);
+      const elevB = sampleElev(xKm, yKm - stepKm);
+      const elevT = sampleElev(xKm, yKm + stepKm);
+
+      const dx = (elevR - elevL) / (2 * stepKm * 1000);
+      const dy = (elevT - elevB) / (2 * stepKm * 1000);
+
+      let nx = -dx * normalScale * 1000;
+      let ny = -dy * normalScale * 1000;
+      let nz = 1.0;
+
+      const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
+      nx /= len;
+      ny /= len;
+      nz /= len;
+
+      const idx = (y * width + x) * 4;
+      data[idx] = Math.round((nx * 0.5 + 0.5) * 255);
+      data[idx + 1] = Math.round((ny * 0.5 + 0.5) * 255);
+      data[idx + 2] = Math.round((nz * 0.5 + 0.5) * 255);
       data[idx + 3] = 255;
     }
   }
 
   const texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(4, 4);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
+ * Creates an authentic scientific raster texture for the local 3D terrain patch
+ * centered on the selected candidate site.
+ */
+function createLocalScientificTexture(
+  site: CandidateSite,
+  mode: ScientificMapLayerMode,
+  patchRadiusKm = 105.0,
+): THREE.DataTexture {
+  const width = 256;
+  const height = 256;
+  const data = new Uint8Array(width * height * 4);
+
+  const centerLat = site.coordinates.latitudeDeg;
+  const centerLon = site.coordinates.longitudeDeg;
+  const centerPos = latLonToVector3(centerLat, centerLon, 1.0).normalize();
+
+  const poleAxis = new THREE.Vector3(0, 1, 0);
+  let north = poleAxis.clone().sub(centerPos.clone().multiplyScalar(poleAxis.dot(centerPos)));
+  if (north.lengthSq() < 1e-6) {
+    const pm = new THREE.Vector3(0, 0, 1);
+    north = pm.clone().sub(centerPos.clone().multiplyScalar(pm.dot(centerPos)));
+  }
+  north.normalize();
+  const east = new THREE.Vector3().crossVectors(north, centerPos).normalize();
+  const moonRadiusKm = 1737.4;
+
+  for (let y = 0; y < height; y++) {
+    const v = y / (height - 1);
+    const yKm = (v - 0.5) * (2 * patchRadiusKm);
+
+    for (let x = 0; x < width; x++) {
+      const u = x / (width - 1);
+      const xKm = (u - 0.5) * (2 * patchRadiusKm);
+
+      const ptOnTangentKm = centerPos
+        .clone()
+        .multiplyScalar(moonRadiusKm)
+        .add(east.clone().multiplyScalar(xKm))
+        .add(north.clone().multiplyScalar(yKm));
+
+      const unitDir = ptOnTangentKm.normalize();
+      const lat = Math.asin(Math.max(-1, Math.min(1, unitDir.y))) * (180 / Math.PI);
+      let lon = Math.atan2(unitDir.x, unitDir.z) * (180 / Math.PI);
+      if (lon < 0) lon += 360;
+
+      const sample = sampleTerrainAtLatLon(lat, lon);
+      let rgb: [number, number, number];
+
+      switch (mode) {
+        case 'topography':
+          rgb = getLolaElevationRgb(sample.elevationMeters);
+          break;
+        case 'hillshade': {
+          const val = Math.round(sample.hillshade * 255);
+          rgb = [val, val, val];
+          break;
+        }
+        case 'slope':
+          rgb = getSlopeRgb(sample.slopeDeg);
+          break;
+        case 'geology':
+          rgb = getGeologyUnitRgb(sample.geologicalUnitCode);
+          break;
+        case 'illumination':
+          rgb = getIlluminationRgb(sample.annualIlluminationPct, sample.isPermanentlyShadowed);
+          break;
+        default:
+          rgb = [172, 170, 168];
+      }
+
+      const idx = (y * width + x) * 4;
+      data[idx] = rgb[0];
+      data[idx + 1] = rgb[1];
+      data[idx + 2] = rgb[2];
+      data[idx + 3] = 255;
+    }
+  }
+
+  const texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.generateMipmaps = true;
@@ -355,20 +478,20 @@ export function createMultiLodTerrainMesh(initialSite: CandidateSite): MultiLodT
 
   let currentSite = initialSite;
   let activeResolution: TerrainGridResolution = '64x64';
+  let activeScientificMode: ScientificMapLayerMode = 'topography';
 
-  const regolithTexture = createLocalRegolithTexture();
-  const normalTexture = createLocalNormalTexture();
+  let regolithTexture = createLocalRegolithTexture(currentSite);
+  let normalTexture = createLocalNormalTexture(currentSite);
+  let currentActiveTexture: THREE.DataTexture = createLocalScientificTexture(currentSite, 'topography');
 
   const material = new THREE.MeshStandardMaterial({
-    map: regolithTexture,
+    map: currentActiveTexture,
     normalMap: normalTexture,
-    normalScale: new THREE.Vector2(0.45, 0.45),
-    roughness: 0.92,
+    normalScale: new THREE.Vector2(0.55, 0.55),
+    roughness: 0.94,
     metalness: 0.0,
-    color: 0xd8dde4, // Clean calibrated highland tone matching NASA Moon Trek
-    polygonOffset: true,
-    polygonOffsetFactor: -1.0,
-    polygonOffsetUnits: -4.0,
+    color: 0xffffff,
+    polygonOffset: false,
     shadowSide: THREE.FrontSide,
   });
 
@@ -389,6 +512,22 @@ export function createMultiLodTerrainMesh(initialSite: CandidateSite): MultiLodT
     geo128 = buildTerrainPatchGeometry(site, 128);
 
     mesh.geometry = activeResolution === '128x128' ? geo128 : geo64;
+
+    normalTexture.dispose();
+    normalTexture = createLocalNormalTexture(site);
+    material.normalMap = normalTexture;
+
+    // Refresh texture for the new site
+    if (activeScientificMode !== 'none') {
+      currentActiveTexture.dispose();
+      currentActiveTexture = createLocalScientificTexture(site, activeScientificMode);
+      material.map = currentActiveTexture;
+    } else {
+      regolithTexture.dispose();
+      regolithTexture = createLocalRegolithTexture(site);
+      material.map = regolithTexture;
+    }
+    material.needsUpdate = true;
   }
 
   function getDiagnostics(): TerrainDiagnostics {
@@ -412,30 +551,53 @@ export function createMultiLodTerrainMesh(initialSite: CandidateSite): MultiLodT
   return {
     group,
     updateLOD: (cameraDistanceToTarget: number) => {
-      // Hysteresis threshold: switch to 128x128 when within 0.28 units, revert to 64x64 when > 0.36 units
-      if (activeResolution === '64x64' && cameraDistanceToTarget < 0.28) {
-        activeResolution = '128x128';
-        mesh.geometry = geo128;
-      } else if (activeResolution === '128x128' && cameraDistanceToTarget > 0.36) {
-        activeResolution = '64x64';
-        mesh.geometry = geo64;
+      const nextResolution: TerrainGridResolution =
+        activeResolution === '64x64'
+          ? cameraDistanceToTarget < 0.28
+            ? '128x128'
+            : '64x64'
+          : cameraDistanceToTarget > 0.38
+            ? '64x64'
+            : '128x128';
+
+      if (nextResolution !== activeResolution) {
+        activeResolution = nextResolution;
+        mesh.geometry = activeResolution === '128x128' ? geo128 : geo64;
       }
     },
     updateSite: (site: CandidateSite) => {
       currentSite = site;
       rebuildGeometries(site);
     },
+    setScientificMode: (mode: ScientificMapLayerMode) => {
+      activeScientificMode = mode;
+      if (mode === 'none') {
+        regolithTexture.dispose();
+        regolithTexture = createLocalRegolithTexture(currentSite);
+        material.map = regolithTexture;
+      } else {
+        if (currentActiveTexture !== regolithTexture) {
+          currentActiveTexture.dispose();
+        }
+        currentActiveTexture = createLocalScientificTexture(currentSite, mode);
+        material.map = currentActiveTexture;
+      }
+      material.needsUpdate = true;
+    },
     getDiagnostics,
     getTerrainDiagnostics: getDiagnostics,
     getSurfaceElevationAt: (latDeg: number, lonDeg: number) => {
-      return sampleLolaElevationMeters(currentSite, latDeg, lonDeg);
+      return sampleLolaElevationAtLatLon(latDeg, lonDeg);
     },
     dispose: () => {
       geo64.dispose();
       geo128.dispose();
-      material.dispose();
       regolithTexture.dispose();
       normalTexture.dispose();
+      if (currentActiveTexture !== regolithTexture) {
+        currentActiveTexture.dispose();
+      }
+      material.dispose();
       group.clear();
     },
   };

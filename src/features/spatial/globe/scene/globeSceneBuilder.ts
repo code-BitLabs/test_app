@@ -14,6 +14,13 @@ import { CameraTransitioner, createCameraTransitioner } from '@/features/spatial
 import { createMarkerPickingController } from '@/features/spatial/globe/interaction/globePicking';
 import { createPolarTerrainFeatures } from '@/features/spatial/globe/scene/globePolarTerrain';
 import { calculate3DOrbitSensitivity } from '@/features/spatial/interaction/zoomAwareInteractionModel';
+import {
+  createLunarRoverController,
+  LunarRoverController,
+  RoverTelemetry,
+} from '@/features/spatial/globe/interaction/lunarRoverController';
+import { CANDIDATE_SITES } from '@/domain/sites/catalog';
+import { CameraPreset, ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 
 /** Used if the container has not laid out yet; the ResizeObserver corrects it immediately. */
 const FALLBACK_CONTAINER_WIDTH = 500;
@@ -46,11 +53,15 @@ export interface GlobeSceneHandle {
   markers: Map<string, SiteMarker>;
   transitioner: CameraTransitioner;
   setSelectedSiteId?: (id: string) => void;
+  setScientificMode?: (mode: ScientificMapLayerMode) => void;
+  setCameraPreset?: (preset: CameraPreset) => void;
   setDisplayOptions?: (opts: { showMarkers?: boolean; showLabels?: boolean; showTerrain?: boolean }) => void;
   setLayerVisibility?: (showGrid: boolean, showShadowRegions: boolean) => void;
   setVectorsVisibility?: (showVectors: boolean) => void;
   setFlyover?: (active?: boolean) => void;
   isFlyoverActive?: () => boolean;
+  setRoverActive?: (active: boolean) => void;
+  isRoverActive?: () => boolean;
   getDiagnostics?: () => GlobeDiagnosticsMetrics;
   dispose: () => void;
 }
@@ -62,10 +73,10 @@ export interface GlobeSceneBuildInput {
   onSurfaceSettled: () => void;
   onSurfaceUnavailable: (message: string) => void;
   onHoverChange: (site: CandidateSite | null) => void;
-  /** Hovering must not leave a badge lit on a site the workspace has since selected. */
   isSiteSelected: (siteId: string) => boolean;
   onPick: (site: CandidateSite) => void;
   onFlyoverInterrupted?: () => void;
+  onRoverTelemetryChange?: (telemetry: RoverTelemetry | null) => void;
 }
 
 /**
@@ -129,10 +140,16 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
   const occlusionScratch = new THREE.Vector3();
   const transitioner = createCameraTransitioner();
   let currentSelectedSiteId = input.initialSelectedSiteId;
+  let currentCameraPreset: CameraPreset = 'nadir';
   let displayOptions = { showMarkers: true, showLabels: true, showTerrain: true };
   let layerVisibility = { showGrid: true, showShadowRegions: true };
   let isVectorsEnabled = true;
   let isFlyoverEnabled = false;
+
+  const initialCandidateSite =
+    CANDIDATE_SITES.find((s) => s.id === input.initialSelectedSiteId) || CANDIDATE_SITES[0];
+  const roverController = createLunarRoverController(container, initialCandidateSite);
+  roverController.attach();
 
   // User manual drag/orbit immediately interrupts in-flight camera transitions and flyover
   const handleControlsStart = () => {
@@ -220,6 +237,44 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
       }
     }
 
+    // First-Person Rover Exploration Mode
+    if (roverController.isActive()) {
+      const dtSec = Math.max(0.001, Math.min(0.1, dt / 1000.0));
+      const telemetry = roverController.update(dtSec, globe.camera);
+      input.onRoverTelemetryChange?.(telemetry);
+
+      if (Math.abs(globe.camera.near - 0.0002) > 0.0001) {
+        globe.camera.near = 0.0002;
+        globe.camera.updateProjectionMatrix();
+      }
+
+      graticuleGroup.visible = false;
+      footprintGroup.visible = false;
+      vectorsGroup.visible = false;
+      polarTerrain.setCraterOutlinesVisible(false);
+
+      applyMarkerHorizonOcclusion(
+        markers,
+        globe.camera.position,
+        globe.camera.position,
+        currentSelectedSiteId,
+        occlusionScratch,
+        displayOptions,
+      );
+
+      if (globe.composer) {
+        globe.composer.render();
+      } else {
+        globe.renderer.render(globe.scene, globe.camera);
+      }
+      if (isSoftwareGl) {
+        afterDraw(animate);
+      } else {
+        animationId = requestAnimationFrame(animate);
+      }
+      return;
+    }
+
     // Step scripted camera move
     transitioner.step(globe.camera, globe.controls);
 
@@ -284,8 +339,14 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
     const isDeepZoom = distToTarget < 0.65;
     graticuleGroup.visible = !isDeepZoom && layerVisibility.showGrid;
     footprintGroup.visible = !isDeepZoom && layerVisibility.showShadowRegions;
-    vectorsGroup.visible = !isDeepZoom && isVectorsEnabled;
-    polarTerrain.setCraterOutlinesVisible(!isDeepZoom);
+    // Suppress cyan celestial vectors and oversized markers in local views
+    const isLocalPreset =
+      currentCameraPreset === 'overhead' ||
+      currentCameraPreset === 'horizon' ||
+      currentCameraPreset === 'inspection' ||
+      currentCameraPreset === 'site';
+    vectorsGroup.visible = !isDeepZoom && !isLocalPreset && isVectorsEnabled;
+    polarTerrain.setCraterOutlinesVisible(!isDeepZoom && !isLocalPreset);
 
     const targetNear = distToTarget < 0.25 ? 0.002 : distToTarget < 0.8 ? 0.01 : 0.05;
     if (Math.abs(globe.camera.near - targetNear) > 0.0005) {
@@ -304,7 +365,11 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
     if (!transitioner.isTransitioning()) {
       globe.controls.update();
     }
-    globe.renderer.render(globe.scene, globe.camera);
+    if (globe.composer) {
+      globe.composer.render();
+    } else {
+      globe.renderer.render(globe.scene, globe.camera);
+    }
 
     if (isSoftwareGl) {
       afterDraw(animate);
@@ -326,6 +391,9 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
         globe.camera.aspect = width / height;
         globe.camera.updateProjectionMatrix();
         globe.renderer.setSize(width, height);
+        if (globe.composer) {
+          globe.composer.setSize(width, height);
+        }
       }
     }
   });
@@ -342,7 +410,42 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
     setSelectedSiteId: (id: string) => {
       currentSelectedSiteId = id;
       polarTerrain.updateSelectedSite(id);
+      const targetSite = CANDIDATE_SITES.find((s) => s.id === id) || CANDIDATE_SITES[0];
+      if (roverController.isActive()) {
+        roverController.resetToSite(targetSite);
+      }
     },
+    setScientificMode: (mode: ScientificMapLayerMode) => {
+      polarTerrain.setScientificMode(mode);
+    },
+    setCameraPreset: (preset: CameraPreset) => {
+      currentCameraPreset = preset;
+      const targetSite = CANDIDATE_SITES.find((s) => s.id === currentSelectedSiteId) || CANDIDATE_SITES[0];
+      if (roverController.isActive()) {
+        roverController.setActive(false);
+        input.onRoverTelemetryChange?.(null);
+        globe.controls.enabled = true;
+      }
+      transitioner.moveTo(preset, targetSite);
+    },
+    setRoverActive: (active: boolean) => {
+      const targetSite = CANDIDATE_SITES.find((s) => s.id === currentSelectedSiteId) || CANDIDATE_SITES[0];
+      if (active) {
+        currentCameraPreset = 'horizon';
+        transitioner.cancel();
+        globe.controls.enabled = false;
+        roverController.resetToSite(targetSite);
+        roverController.setActive(true);
+        globe.camera.near = 0.0002;
+        globe.camera.updateProjectionMatrix();
+      } else {
+        roverController.setActive(false);
+        input.onRoverTelemetryChange?.(null);
+        globe.controls.enabled = true;
+        transitioner.moveTo('horizon', targetSite);
+      }
+    },
+    isRoverActive: () => roverController.isActive(),
     setDisplayOptions: (opts: { showMarkers?: boolean; showLabels?: boolean; showTerrain?: boolean }) => {
       displayOptions = { ...displayOptions, ...opts };
       if (opts.showTerrain !== undefined) {
@@ -369,6 +472,7 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
     isFlyoverActive: () => isFlyoverEnabled,
     getDiagnostics: () => cachedMetrics,
     dispose: () => {
+      roverController.detach();
       cancelAnimationFrame(animationId);
       if (timerId !== null) clearTimeout(timerId);
       resizeObserver.disconnect();
@@ -379,6 +483,10 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
       }
       globe.controls.dispose();
       globe.renderer.dispose();
+      if (globe.starfield) {
+        globe.starfield.geometry.dispose();
+        (globe.starfield.material as THREE.Material).dispose();
+      }
       surface.dispose();
       polarTerrain.dispose();
     },

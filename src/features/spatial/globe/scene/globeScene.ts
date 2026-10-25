@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import {
   SelenographicLatitudeDeg,
   SelenographicLongitudeDeg,
@@ -19,17 +22,17 @@ const CONTROL_DAMPING_FACTOR = 0.05;
 export const CONTROL_MIN_DISTANCE = 0.015;
 export const CONTROL_MAX_DISTANCE = 14.0;
 
-const SUN_LIGHT_COLOR = 0xfff8e7;
-const SUN_LIGHT_INTENSITY = 2.2;
-const SUN_SHADOW_MAP_SIZE = 1024;
+const SUN_LIGHT_COLOR = 0xfffcf2;
+const SUN_LIGHT_INTENSITY = 2.5;
+const SUN_SHADOW_MAP_SIZE = 2048;
 const SUN_SHADOW_CAMERA_EXTENT = 2.5;
 const SUN_SHADOW_NEAR = 0.5;
 const SUN_SHADOW_FAR = 30;
-const SUN_SHADOW_BIAS = -0.0002;
-const EARTHSHINE_LIGHT_COLOR = 0x93c5fd;
-const EARTHSHINE_LIGHT_INTENSITY = 0.26;
-const AMBIENT_SPACE_LIGHT_COLOR = 0x182438;
-const AMBIENT_SPACE_LIGHT_INTENSITY = 0.28;
+const SUN_SHADOW_BIAS = -0.0003;
+const EARTHSHINE_LIGHT_COLOR = 0x7dd3fc;
+const EARTHSHINE_LIGHT_INTENSITY = 0.22;
+const AMBIENT_SPACE_LIGHT_COLOR = 0x0c1322;
+const AMBIENT_SPACE_LIGHT_INTENSITY = 0.16;
 /** Directional lights sit far along their body-fixed direction so rays read as parallel. */
 const SUN_LIGHT_DISTANCE = 18.0;
 const EARTHSHINE_LIGHT_DISTANCE = 15.0;
@@ -57,6 +60,62 @@ export interface GlobeScene {
   controls: OrbitControls;
   sunLight: THREE.DirectionalLight;
   earthLight: THREE.DirectionalLight;
+  composer?: EffectComposer;
+  starfield?: THREE.Points;
+}
+
+/**
+ * Creates an authentic 3D celestial starfield sphere with stellar color temperatures and magnitudes.
+ */
+export function createCelestialStarfield(count = 2500, radius = 70): THREE.Points {
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+
+  for (let i = 0; i < count; i++) {
+    const u = Math.random();
+    const v = Math.random();
+    const theta = u * 2.0 * Math.PI;
+    const phi = Math.acos(2.0 * v - 1.0);
+    const r = radius + (Math.random() - 0.5) * 6.0;
+
+    positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    positions[i * 3 + 1] = r * Math.cos(phi);
+    positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+
+    // Stellar color temperatures (O/B blue, A/F white, G yellow, M red)
+    const starType = Math.random();
+    let cr = 1.0, cg = 1.0, cb = 1.0;
+    if (starType < 0.15) {
+      cr = 0.75; cg = 0.85; cb = 1.0;
+    } else if (starType < 0.65) {
+      cr = 0.95; cg = 0.95; cb = 1.0;
+    } else if (starType < 0.88) {
+      cr = 1.0; cg = 0.92; cb = 0.70;
+    } else {
+      cr = 1.0; cg = 0.65; cb = 0.50;
+    }
+    const brightness = 0.4 + Math.random() * 0.6;
+    colors[i * 3] = cr * brightness;
+    colors[i * 3 + 1] = cg * brightness;
+    colors[i * 3 + 2] = cb * brightness;
+  }
+
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const material = new THREE.PointsMaterial({
+    size: 1.5,
+    sizeAttenuation: false,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.85,
+    depthWrite: false,
+  });
+
+  const starfield = new THREE.Points(geometry, material);
+  starfield.renderOrder = -100;
+  return starfield;
 }
 
 /** Detects software WebGL implementations (SwiftShader, llvmpipe) to tune performance. */
@@ -144,7 +203,30 @@ export function createGlobeScene(width: number, height: number): GlobeScene {
   earthLight.position.set(0, 0, EARTHSHINE_INITIAL_DISTANCE);
   scene.add(earthLight);
 
-  return { scene, camera, renderer, controls, sunLight, earthLight };
+  // 3D Procedural Starfield Sphere
+  const starfield = createCelestialStarfield();
+  scene.add(starfield);
+
+  // Hardware GPU Post-Processing Pipeline (Bloom, Tone Mapping)
+  let composer: EffectComposer | undefined;
+  if (!isSoftwareGl) {
+    try {
+      composer = new EffectComposer(renderer);
+      const renderPass = new RenderPass(scene, camera);
+      composer.addPass(renderPass);
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(width, height),
+        0.28, // Natural grazing solar bloom strength
+        0.35, // Glow radius
+        0.88, // Luminance threshold (blinding solar peaks and Sun disc only)
+      );
+      composer.addPass(bloomPass);
+    } catch {
+      composer = undefined;
+    }
+  }
+
+  return { scene, camera, renderer, controls, sunLight, earthLight, composer, starfield };
 }
 
 /** Aim the Sun and Earthshine lights at the sub-solar and sub-Earth points of the epoch. */

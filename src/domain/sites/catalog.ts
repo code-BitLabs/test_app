@@ -1,197 +1,38 @@
-import { CandidateSite } from '@/domain/sites/candidateSite';
+import { CandidateSite, SiteCategory } from '@/domain/sites/candidateSite';
+import { ARTEMIS_III_2024_SITES } from '@/domain/sites/data/artemisSites';
+import { POLAR_BENCHMARK_SITES } from '@/domain/sites/data/benchmarkSites';
+import { CLPS_SITES } from '@/domain/sites/data/clpsSites';
+import { HISTORIC_SITES } from '@/domain/sites/data/historicSites';
+
+export type { SiteCategory };
 
 /**
  * Catalog Metadata & Lineage:
  * Distinguishes candidate named points from broad NASA region polygons.
- * Discloses the 2022 shortlist provenance, the October 2024 9-region Artemis III update,
- * and the May 2026 mission planning architecture.
+ * Covers the October 2024 9-region Artemis III update, CLPS commercial landers,
+ * and historic reference planetary baselines.
  */
 export const CATALOG_METADATA = {
-  catalogName: 'Lunar South Pole Candidate Exploration Sites',
-  catalogVersion: '2022 Preliminary Shortlist (LOLA / LROC Studies)',
-  lineage: 'NASA Artemis 2022 candidate landing regions with LRO LOLA/LROC topographic refinements',
-  officialUpdateNotice: 'NASA released an updated 9-region Artemis III candidate list in October 2024 (Peak near Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile Rim 1, Nobile Rim 2, de Gerlache Rim 2, Slater Plain) and outlined updated preliminary mission architecture in May 2026. This dataset represents named candidate surface points from the established polar study series.',
+  catalogName: 'Lunar Exploration Candidate & Benchmark Landing Sites',
+  catalogVersion: 'Space Apps 2026 Multitier Planetary Dataset',
+  lineage: 'NASA Artemis 2024 candidate regions, CLPS mission flight manifests, and Apollo/CNSA ground truth baselines',
+  officialUpdateNotice: 'Includes 9 official Artemis III candidate regions (Oct 2024 update), polar benchmarks, CLPS landers (IM-1, IM-2, Blue Ghost), and historic reference sites (Apollo 11, Apollo 17, Chang\'e 6).',
   coordinateConvention: 'IAU/IAG Lunar Mean Earth / Polar Axis (ME)',
   elevationDatum: 'Reference lunar sphere of R = 1737.4 km (LOLA DEM 128ppd)',
 } as const;
 
+/**
+ * 20 Authoritative Lunar Landing Sites across 4 Mission Tiers:
+ * 1. Artemis III 2024 (9 Official Regions)
+ * 2. Polar Calibration Benchmarks (5 Sites)
+ * 3. CLPS Commercial Landers (3 Sites: IM-1, IM-2, Blue Ghost)
+ * 4. Historic & Reference Baselines (3 Sites: Apollo 11, Apollo 17, Chang'e 6)
+ */
 export const CANDIDATE_SITES: CandidateSite[] = [
-  {
-    id: 'shackleton-rim',
-    code: 'SITE-001',
-    name: 'Shackleton Crater Rim',
-    coordinates: {
-      latitudeDeg: -89.90,
-      longitudeDeg: 0.00,
-      elevationMeters: 4250,
-      convention: 'IAU/IAG Lunar Mean Earth/Polar Axis',
-    },
-    priority: 'Artemis III Candidate',
-    description: 'Prominent elevated rim point located less than 3 km from the exact South Pole. Features near-constant solar grazing illumination during southern summer and excellent Earth visibility.',
-    meanTerrainHorizonDeg: 0.45,
-    maxTerrainObstructionDeg: 1.20,
-    coverageStatus: 'High (LOLA DEM 128ppd)',
-    isDemoFixture: false,
-    sourceCatalog: 'NASA Artemis 2022 Study Shortlist / LOLA Topography',
-    catalogVersion: '2022-08 (LROC/LOLA Refined)',
-    entityType: 'candidate-point',
-    officialRegionReference: 'Shackleton Connecting Ridge Region (2022)',
-    missionContextNote: 'Topographic ridge feature near Shackleton rim investigated for Artemis surface operations.',
-  },
-  {
-    id: 'connecting-ridge',
-    code: 'SITE-002',
-    name: 'Connecting Ridge',
-    coordinates: {
-      latitudeDeg: -89.44,
-      longitudeDeg: 222.50,
-      elevationMeters: 3820,
-      convention: 'IAU/IAG Lunar Mean Earth/Polar Axis',
-    },
-    priority: 'Artemis III Candidate',
-    description: 'Structural ridge connecting Shackleton to de Gerlache rim. Highly rated for solar power generation potential, with periodic low-angle shadowing by adjacent massifs.',
-    meanTerrainHorizonDeg: 0.65,
-    maxTerrainObstructionDeg: 1.45,
-    coverageStatus: 'High (LOLA DEM 128ppd)',
-    isDemoFixture: false,
-    sourceCatalog: 'NASA Artemis 2022 Study Shortlist / LOLA Topography',
-    catalogVersion: '2022-08 (LROC/LOLA Refined)',
-    entityType: 'candidate-point',
-    officialRegionReference: 'Connecting Ridge Region (2022)',
-    missionContextNote: 'High illumination ridge featured in 2022 preliminary candidate evaluations.',
-  },
-  {
-    id: 'de-gerlache-rim-1',
-    code: 'SITE-003',
-    name: 'de Gerlache Rim 1',
-    coordinates: {
-      latitudeDeg: -88.71,
-      longitudeDeg: 271.40,
-      elevationMeters: 3610,
-      convention: 'IAU/IAG Lunar Mean Earth/Polar Axis',
-    },
-    priority: 'Artemis III Candidate',
-    description: 'Western rim crest of de Gerlache crater overlooking steep permanently shadowed interior depressions while maintaining periodic line-of-sight to Earth.',
-    meanTerrainHorizonDeg: 0.80,
-    maxTerrainObstructionDeg: 1.70,
-    coverageStatus: 'High (LOLA DEM 128ppd)',
-    isDemoFixture: false,
-    sourceCatalog: 'NASA Artemis 2022 Study Shortlist / LOLA Topography',
-    catalogVersion: '2022-08 (LROC/LOLA Refined)',
-    entityType: 'candidate-point',
-    officialRegionReference: 'de Gerlache Rim 1 / Rim 2 (Updated Oct 2024)',
-    missionContextNote: 'Adjacent to updated de Gerlache Rim 2 candidate region announced in Oct 2024.',
-  },
-  {
-    id: 'peak-near-shackleton',
-    code: 'SITE-004',
-    name: 'Peak Near Shackleton',
-    coordinates: {
-      latitudeDeg: -89.73,
-      longitudeDeg: 126.80,
-      elevationMeters: 4120,
-      convention: 'IAU/IAG Lunar Mean Earth/Polar Axis',
-    },
-    priority: 'Artemis III Candidate',
-    description: 'Distinctive topographic high point east of Shackleton crater rim. Receives elongated periods of low-elevation solar illumination.',
-    meanTerrainHorizonDeg: 0.50,
-    maxTerrainObstructionDeg: 1.15,
-    coverageStatus: 'High (LOLA DEM 128ppd)',
-    isDemoFixture: false,
-    sourceCatalog: 'NASA Artemis 2022 Study Shortlist / LOLA Topography',
-    catalogVersion: '2022-08 (LROC/LOLA Refined)',
-    entityType: 'candidate-point',
-    officialRegionReference: 'Peak Near Shackleton Region (2022)',
-    missionContextNote: 'Topographic elevation point for extreme polar illumination studies.',
-  },
-  {
-    id: 'malapert-massif',
-    code: 'SITE-005',
-    name: 'Malapert Mountain (Massif)',
-    coordinates: {
-      latitudeDeg: -85.90,
-      longitudeDeg: 2.90,
-      elevationMeters: 5100,
-      convention: 'IAU/IAG Lunar Mean Earth/Polar Axis',
-    },
-    priority: 'Artemis III Candidate',
-    description: 'Major topographic massif rising ~5 km above surroundings. Outstanding direct-to-Earth communication line of sight and wide geometric horizon clearance.',
-    meanTerrainHorizonDeg: 0.15,
-    maxTerrainObstructionDeg: 0.60,
-    coverageStatus: 'High (LOLA DEM 128ppd)',
-    isDemoFixture: false,
-    sourceCatalog: 'NASA Artemis 2022 / Oct 2024 Candidate Region List',
-    catalogVersion: 'Confirmed in Oct 2024 Artemis III 9-Region Update',
-    entityType: 'candidate-point',
-    officialRegionReference: 'Malapert Massif (NASA Oct 2024 Confirmed Region)',
-    missionContextNote: 'One of the nine official Artemis III candidate regions re-confirmed in October 2024.',
-  },
-  {
-    id: 'haworth-rim',
-    code: 'SITE-006',
-    name: 'Haworth Crater Rim',
-    coordinates: {
-      latitudeDeg: -87.40,
-      longitudeDeg: 355.00,
-      elevationMeters: 2890,
-      convention: 'IAU/IAG Lunar Mean Earth/Polar Axis',
-    },
-    priority: 'Permanent Shadow Boundary',
-    description: 'Elevated rim of Haworth crater, which shelters deep permanently shadowed regions (PSRs) with volatile deposits. Complex local horizon profile.',
-    meanTerrainHorizonDeg: 1.10,
-    maxTerrainObstructionDeg: 2.30,
-    coverageStatus: 'Moderate (LOLA 60ppd)',
-    isDemoFixture: false,
-    sourceCatalog: 'NASA Artemis 2022 / Oct 2024 Candidate Region List',
-    catalogVersion: 'Confirmed in Oct 2024 Artemis III 9-Region Update',
-    entityType: 'candidate-point',
-    officialRegionReference: 'Haworth (NASA Oct 2024 Confirmed Region)',
-    missionContextNote: 'One of the nine official Artemis III candidate regions re-confirmed in October 2024.',
-  },
-  {
-    id: 'nobile-rim-1',
-    code: 'SITE-007',
-    name: 'Nobile Rim 1',
-    coordinates: {
-      latitudeDeg: -85.20,
-      longitudeDeg: 53.50,
-      elevationMeters: 3450,
-      convention: 'IAU/IAG Lunar Mean Earth/Polar Axis',
-    },
-    priority: 'VIPER Target Region',
-    description: 'High-latitude crater rim area targeted by volatile investigation rovers. Balanced mix of accessible slopes, illumination windows, and Earth line-of-sight.',
-    meanTerrainHorizonDeg: 0.90,
-    maxTerrainObstructionDeg: 1.85,
-    coverageStatus: 'High (LOLA DEM 128ppd)',
-    isDemoFixture: false,
-    sourceCatalog: 'NASA Artemis 2022 / Oct 2024 Candidate Region List',
-    catalogVersion: 'Confirmed in Oct 2024 Artemis III 9-Region Update',
-    entityType: 'candidate-point',
-    officialRegionReference: 'Nobile Rim 1 (NASA Oct 2024 Confirmed Region)',
-    missionContextNote: 'Confirmed Artemis III candidate landing region and VIPER exploration zone.',
-  },
-  {
-    id: 'amundsen-rim',
-    code: 'SITE-008',
-    name: 'Amundsen Crater Rim',
-    coordinates: {
-      latitudeDeg: -84.50,
-      longitudeDeg: 82.80,
-      elevationMeters: 3180,
-      convention: 'IAU/IAG Lunar Mean Earth/Polar Axis',
-    },
-    priority: 'Benchmark Calibration Site',
-    description: 'Standard benchmark site utilized for cross-calibrating solar illumination models against LROC Narrow Angle Camera shadow sequences.',
-    meanTerrainHorizonDeg: 0.75,
-    maxTerrainObstructionDeg: 1.60,
-    coverageStatus: 'Benchmark Validated',
-    isDemoFixture: false,
-    sourceCatalog: 'LROC NAC Calibration Benchmark Series',
-    catalogVersion: 'LROC Science Team Reference',
-    entityType: 'candidate-point',
-    officialRegionReference: 'Amundsen Crater Rim Calibration Benchmark',
-    missionContextNote: 'Reference site used for shadow-length ground truthing against empirical camera passes.',
-  },
+  ...POLAR_BENCHMARK_SITES,
+  ...ARTEMIS_III_2024_SITES,
+  ...CLPS_SITES,
+  ...HISTORIC_SITES,
 ];
 
 export const DEFAULT_SITE_ID = 'shackleton-rim';
@@ -202,6 +43,64 @@ export const DEFAULT_COMPARISON_SITE_IDS: readonly string[] = [
   'connecting-ridge',
   'malapert-massif',
 ];
+
+/** The Nine Candidate Landing Regions officially confirmed by NASA in October 2024 for Artemis III. */
+export const ARTEMIS_III_2024_REGION_IDS: readonly string[] = [
+  'peak-near-cabeus-b',
+  'haworth-rim',
+  'malapert-massif',
+  'mons-mouton',
+  'mons-mouton-plateau',
+  'nobile-rim-1',
+  'nobile-rim-2',
+  'de-gerlache-rim-2',
+  'slater-plain',
+];
+
+/** The Five Historic South-Pole Calibration Benchmarks. */
+export const POLAR_BENCHMARK_SITE_IDS: readonly string[] = [
+  'shackleton-rim',
+  'connecting-ridge',
+  'de-gerlache-rim-1',
+  'peak-near-shackleton',
+  'amundsen-rim',
+];
+
+/** Commercial Lunar Payload Services (CLPS) Landing Sites. */
+export const CLPS_SITE_IDS: readonly string[] = [
+  'im-1-odysseus',
+  'im-2-prime1',
+  'firefly-blue-ghost',
+];
+
+/** Historic Planetary Baselines (Apollo 11, Apollo 17, Chang'e 6). */
+export const HISTORIC_SITE_IDS: readonly string[] = [
+  'apollo-11',
+  'apollo-17',
+  'change-6',
+];
+
+export type SiteCatalogFilter = 'artemis-iii-2024' | 'all' | SiteCategory;
+
+export function getSitesByCategory(category: SiteCategory): CandidateSite[] {
+  return CANDIDATE_SITES.filter((s) => s.category === category);
+}
+
+export function getFilteredCandidateSites(filter: SiteCatalogFilter = 'all'): CandidateSite[] {
+  if (filter === 'artemis-iii-2024' || filter === 'artemis-2024') {
+    return CANDIDATE_SITES.filter((s) => ARTEMIS_III_2024_REGION_IDS.includes(s.id));
+  }
+  if (filter === 'polar-benchmark') {
+    return getSitesByCategory('polar-benchmark');
+  }
+  if (filter === 'clps') {
+    return getSitesByCategory('clps');
+  }
+  if (filter === 'historic') {
+    return getSitesByCategory('historic');
+  }
+  return CANDIDATE_SITES;
+}
 
 export function getSiteById(id: string): CandidateSite | undefined {
   return CANDIDATE_SITES.find((s) => s.id === id);

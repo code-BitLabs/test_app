@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { CandidateSite } from '@/domain/sites/candidateSite';
-import { CameraPreset } from '@/features/spatial/model/spatialPreferences';
+import { CameraPreset, ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 import {
   SelenographicLatitudeDeg,
   SelenographicLongitudeDeg,
@@ -27,8 +27,10 @@ export interface GlobeSceneSyncInput {
   showTerrain?: boolean;
   showMarkers?: boolean;
   showLabels?: boolean;
+  scientificMapMode?: ScientificMapLayerMode;
   cameraPreset: CameraPreset;
   applyCameraPreset: (preset: CameraPreset, site: CandidateSite) => void;
+  isRoverActive?: boolean;
 }
 
 /**
@@ -112,4 +114,25 @@ export function useGlobeSceneSync(input: GlobeSceneSyncInput): void {
     if (!handle) return;
     handle.setDisplayOptions?.({ showTerrain, showMarkers, showLabels });
   }, [handleRef, showTerrain, showMarkers, showLabels]);
+
+  // Scientific map raster products (Topography, Hillshade, Slope, Geology, Illumination)
+  useEffect(() => {
+    const handle = handleRef.current;
+    if (!handle || !input.scientificMapMode) return;
+    handle.setScientificMode?.(input.scientificMapMode);
+  }, [handleRef, input.scientificMapMode]);
+
+  // Camera preset notifications
+  useEffect(() => {
+    const handle = handleRef.current;
+    if (!handle) return;
+    handle.setCameraPreset?.(cameraPreset);
+  }, [handleRef, cameraPreset]);
+
+  // Rover active / EVA surface mode notifications
+  useEffect(() => {
+    const handle = handleRef.current;
+    if (!handle || typeof handle.setRoverActive !== 'function') return;
+    handle.setRoverActive(Boolean(input.isRoverActive));
+  }, [handleRef, input.isRoverActive]);
 }

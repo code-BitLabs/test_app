@@ -7,14 +7,14 @@ const LOLA_DEM_TEXTURE_URL = '/assets/lunar/ldem_topo.jpg';
 
 /** Smooth 128x128 sphere geometry for high-performance, seamless lunar curvature. */
 const MOON_SPHERE_SEGMENTS = 128;
-const REGOLITH_ROUGHNESS = 0.92;
+const REGOLITH_ROUGHNESS = 0.94;
 const REGOLITH_METALNESS = 0.0;
-const REGOLITH_TINT = 0xd4d8df;
+const REGOLITH_TINT = 0xdbe0e8;
 
 /** Calibrated subtle relief settings to eliminate spiky polygon artifacts while preserving crater morphology. */
-const NORMAL_MAP_STRENGTH = 0.85;
-const NORMAL_SCALE = 0.35;
-const BUMP_SCALE = 0.012;
+const NORMAL_MAP_STRENGTH = 1.15;
+const NORMAL_SCALE = 0.45;
+const BUMP_SCALE = 0.015;
 
 /** Prime meridian sits at the centre of the equirectangular maps, which is +Z in this scene. */
 const TEXTURE_PRIME_MERIDIAN_ROTATION_Y = -Math.PI / 2;

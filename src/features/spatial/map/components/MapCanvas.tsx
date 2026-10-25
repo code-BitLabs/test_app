@@ -10,6 +10,9 @@ import type {
   TopocentricAzimuthDeg,
   TopocentricElevationDeg,
 } from '@/domain/coordinates/frames';
+import { ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
+import { ScientificRasterLayer } from '@/features/spatial/map/layers/ScientificRasterLayer';
+import { ScientificMapLegend } from '@/features/spatial/map/components/ScientificMapLegend';
 import { MapGridLayer } from '@/features/spatial/map/layers/MapGridLayer';
 import { CraterLayer } from '@/features/spatial/map/layers/CraterLayer';
 import { CandidateLayer } from '@/features/spatial/map/layers/CandidateLayer';
@@ -68,6 +71,8 @@ export interface MapCanvasProps {
   onHoverSite: (site: CandidateSite | null) => void;
   onOpenVectorPopover: (target: 'sun' | 'earth') => void;
   gestures: MapGestureHandlers;
+  scientificMapMode?: ScientificMapLayerMode;
+  onSelectScientificMapMode?: (mode: ScientificMapLayerMode) => void;
 }
 
 /**
@@ -89,10 +94,12 @@ export function MapCanvas({
   onHoverSite,
   onOpenVectorPopover,
   gestures,
+  scientificMapMode = 'topography',
+  onSelectScientificMapMode,
 }: MapCanvasProps) {
   return (
     <div
-      className="w-full h-full flex-1 flex items-center justify-center cursor-grab active:cursor-grabbing overflow-hidden min-h-0"
+      className="relative w-full h-full flex-1 flex items-center justify-center cursor-grab active:cursor-grabbing overflow-hidden min-h-0"
       onMouseDown={gestures.onMouseDown}
       onMouseMove={gestures.onMouseMove}
       onMouseUp={gestures.onMouseUp}
@@ -146,6 +153,9 @@ export function MapCanvas({
             strokeWidth="1.5"
           />
 
+          {/* 0. Scientific Raster Layer (LOLA Topography, Hillshade, Slope, Geology, Illumination) */}
+          <ScientificRasterLayer mode={scientificMapMode} />
+
           {/* 1. Graticule Layer (Latitudes & Meridians) */}
           <MapGridLayer showGrid={layers.showGrid} zoom={zoom} />
 
@@ -189,6 +199,16 @@ export function MapCanvas({
           />
         </g>
       </svg>
+
+      {/* Floating Scientific Map Product Legend & Layer Selector */}
+      {onSelectScientificMapMode && (
+        <div className="absolute bottom-4 left-4 z-20 pointer-events-none max-w-xs">
+          <ScientificMapLegend
+            mode={scientificMapMode}
+            onSelectMode={onSelectScientificMapMode}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { CandidateSite } from '@/domain/sites/candidateSite';
-import { CameraPreset } from '@/features/spatial/model/spatialPreferences';
+import { CameraPreset, ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 import {
   SelenographicLatitudeDeg,
   SelenographicLongitudeDeg,
@@ -11,6 +11,7 @@ import {
   GlobeDiagnosticsMetrics,
   buildGlobeScene,
 } from '@/features/spatial/globe/scene/globeSceneBuilder';
+import { RoverTelemetry } from '@/features/spatial/globe/interaction/lunarRoverController';
 import { useGlobeSceneSync } from '@/features/spatial/globe/hooks/useGlobeSceneSync';
 
 /** Color mosaic and DEM relief both settle before the loading overlay lifts. */
@@ -31,10 +32,13 @@ export interface UseGlobeSceneInput {
   showTerrain?: boolean;
   showMarkers?: boolean;
   showLabels?: boolean;
+  scientificMapMode?: ScientificMapLayerMode;
   cameraPreset: CameraPreset;
   onCameraPresetChange: (preset: CameraPreset) => void;
   isFlyoverActive?: boolean;
   onFlyoverChange?: (active: boolean) => void;
+  onRoverTelemetryChange?: (telemetry: RoverTelemetry | null) => void;
+  isRoverActive?: boolean;
 }
 
 export interface UseGlobeSceneResult {
@@ -86,7 +90,11 @@ export function useGlobeScene(input: UseGlobeSceneInput): UseGlobeSceneResult {
   const [hoveredSite, setHoveredSite] = useState<CandidateSite | null>(null);
 
   const moveCameraToPreset = useCallback((preset: CameraPreset, site: CandidateSite) => {
-    handleRef.current?.transitioner.moveTo(preset, site);
+    if (handleRef.current?.setCameraPreset) {
+      handleRef.current.setCameraPreset(preset);
+    } else {
+      handleRef.current?.transitioner.moveTo(preset, site);
+    }
   }, []);
 
   /**
@@ -127,6 +135,7 @@ export function useGlobeScene(input: UseGlobeSceneInput): UseGlobeSceneResult {
       isSiteSelected: (siteId) => siteId === selectedSiteIdRef.current,
       onPick: (site) => pickSiteRef.current(site),
       onFlyoverInterrupted: () => onFlyoverChangeRef.current?.(false),
+      onRoverTelemetryChange: input.onRoverTelemetryChange,
     });
     if (!handle) {
       setStatus({ kind: 'unsupported' });
@@ -184,6 +193,8 @@ export function useGlobeScene(input: UseGlobeSceneInput): UseGlobeSceneResult {
     showLabels,
     cameraPreset,
     applyCameraPreset,
+    scientificMapMode: input.scientificMapMode,
+    isRoverActive: input.isRoverActive,
   });
 
   const getDiagnostics = useCallback(() => {

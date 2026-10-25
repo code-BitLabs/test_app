@@ -31,11 +31,13 @@ import { CameraPreset } from '@/features/spatial/model/spatialPreferences';
 import { GlobeSiteInspectionPanel } from '@/features/spatial/globe/components/GlobeSiteInspectionPanel';
 import { PointPassport } from '@/features/passport/ui/PointPassport';
 import { availableValue } from '@/shared/formatting/availability';
+import { RoverTelemetry } from '@/features/spatial/globe/interaction/lunarRoverController';
+import { SiteComparisonMatrixModal } from '@/features/spatial/components/SiteComparisonMatrixModal';
 
 export function Scenario3DLab() {
   const { site: selectedSite, conditions, ephemeris, epochIsoUtc, epochMs } = useScenarioModel();
   const { selectSite, setEpoch } = useScenarioCommands();
-  const { preferences, toggleLayer, selectCameraPreset } = useSpatialPreferences();
+  const { preferences, toggleLayer, selectCameraPreset, selectScientificMapMode } = useSpatialPreferences();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
@@ -43,14 +45,35 @@ export function Scenario3DLab() {
   const [showTerrain, setShowTerrain] = useState(true);
   const [showMarkers, setShowMarkers] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
+  const [roverTelemetry, setRoverTelemetry] = useState<RoverTelemetry | null>(null);
+  const [isRoverActive, setIsRoverActive] = useState(false);
   const [isControlsCollapsed, setIsControlsCollapsed] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFlyoverActive, setIsFlyoverActive] = useState(false);
   const [isSplitView, setIsSplitView] = useState(false);
+  const [isComparisonOpen, setIsComparisonOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const epochRef = useRef(epochMs);
   epochRef.current = epochMs;
+
+  // Auto-deactivate rover when preset leaves 'horizon'
+  React.useEffect(() => {
+    if (preferences.cameraPreset !== 'horizon' && isRoverActive) {
+      setIsRoverActive(false);
+    }
+  }, [preferences.cameraPreset, isRoverActive]);
+
+  // Escape key exits rover mode
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isRoverActive) {
+        setIsRoverActive(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRoverActive]);
 
   const stepTimeHours = useCallback(
     (hours: number) => {
@@ -100,6 +123,7 @@ export function Scenario3DLab() {
 
   const handleResetCamera = useCallback(() => {
     setIsFlyoverActive(false);
+    setIsRoverActive(false);
     selectCameraPreset('nadir');
     const defaultSite = CANDIDATE_SITES[0];
     if (defaultSite) selectSite(defaultSite.id);
@@ -214,6 +238,18 @@ export function Scenario3DLab() {
             ))}
           </select>
 
+          {/* Multi-Site Comparison Navigator */}
+          <button
+            type="button"
+            data-testid="open-comparison-matrix"
+            onClick={() => setIsComparisonOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono rounded-[var(--lm-radius-xs)] border bg-amber-500/10 border-amber-500/50 text-amber-300 hover:bg-amber-500/20 transition-colors font-semibold shadow-sm"
+            title="Open Artemis Multi-Site Comparison Navigator"
+          >
+            <Compass className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Compare Sites</span>
+          </button>
+
           {/* Synchronized 2D/3D Split View Toggle */}
           <button
             type="button"
@@ -295,10 +331,13 @@ export function Scenario3DLab() {
             onToggleVectors={() => toggleLayer('vectors')}
             cameraPreset={preferences.cameraPreset}
             onCameraPresetChange={selectCameraPreset}
+            scientificMapMode={preferences.scientificMapMode}
+            onRoverTelemetryChange={setRoverTelemetry}
             showDiagnostics={showDiagnostics}
             epochIsoUtc={epochIsoUtc}
             isFlyoverActive={isFlyoverActive}
             onFlyoverChange={setIsFlyoverActive}
+            isRoverActive={isRoverActive}
             hideHeader
             hideRibbon
             hideLegend
@@ -316,6 +355,99 @@ export function Scenario3DLab() {
                 onEnterLocalInspection={() => selectCameraPreset('inspection')}
                 currentMode={preferences.cameraPreset === 'oblique' || preferences.cameraPreset === 'inspection' ? 'inspection' : preferences.cameraPreset === 'site' ? 'overview' : 'regional'}
               />
+            </div>
+          )}
+
+          {/* Ground Horizon Perspective & Rover Sub-Mode HUD */}
+          {preferences.cameraPreset === 'horizon' && (
+            <div
+              data-testid="rover-hud"
+              className="absolute top-14 left-1/2 -translate-x-1/2 z-20 pointer-events-auto bg-[var(--lm-color-surface)]/95 backdrop-blur-md border border-amber-500/50 rounded-[var(--lm-radius-md)] px-4 py-2 text-xs font-mono shadow-2xl flex flex-col gap-1.5 max-w-lg w-full"
+            >
+              <div className="flex items-center justify-between border-b border-amber-500/30 pb-1">
+                <span className="flex items-center gap-1.5 font-bold text-amber-300 uppercase tracking-wider">
+                  <Mountain className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{isRoverActive ? 'Surface Rover EVA Traverse • 25m Mast' : 'Crater Rim Ground Horizon Perspective'}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsRoverActive((prev) => !prev)}
+                  className={`text-[10px] font-bold px-2.5 py-1 rounded transition-colors flex items-center gap-1 ${
+                    isRoverActive
+                      ? 'bg-amber-500 text-black hover:bg-amber-400'
+                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30'
+                  }`}
+                >
+                  {isRoverActive ? 'Exit Rover • Orbit View' : 'Drive Rover (EVA)'}
+                </button>
+              </div>
+              {isRoverActive ? (
+                <>
+                  <div className="grid grid-cols-4 gap-2 text-[10px] pt-0.5">
+                    <div>
+                      <span className="text-slate-400 block">COORDINATES</span>
+                      <span className="text-white font-semibold">
+                        {roverTelemetry
+                          ? `${roverTelemetry.latDeg.toFixed(3)}°S, ${roverTelemetry.lonDeg.toFixed(1)}°E`
+                          : `${selectedSite.coordinates.latitudeDeg.toFixed(3)}°S, ${selectedSite.coordinates.longitudeDeg.toFixed(1)}°E`}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">LOLA ELEVATION</span>
+                      <span className="text-cyan-300 font-semibold">
+                        {roverTelemetry
+                          ? `${roverTelemetry.elevationMeters > 0 ? '+' : ''}${roverTelemetry.elevationMeters.toLocaleString()} m`
+                          : `+${selectedSite.coordinates.elevationMeters.toLocaleString()} m`}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">SURFACE SLOPE</span>
+                      <span className="text-emerald-400 font-semibold">
+                        {roverTelemetry ? `${roverTelemetry.slopeDeg.toFixed(1)}°` : '8.5°'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">GROUND SPEED</span>
+                      <span className="text-white font-semibold">
+                        {roverTelemetry ? `${roverTelemetry.speedMps.toFixed(1)} m/s` : '0.0 m/s'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-[9px] text-slate-400 flex items-center justify-between border-t border-[var(--lm-color-border-subtle)] pt-1">
+                    <span>
+                      Controls: <strong className="text-slate-200">W/A/S/D or Arrow keys</strong> to drive
+                    </span>
+                    <span>
+                      <strong className="text-slate-200">Click & Drag</strong> to look • <strong className="text-slate-200">Esc</strong> to exit
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="text-[10px] text-slate-300 flex items-center justify-between">
+                  <span>
+                    Orbit Controls: <strong className="text-white">Drag</strong> to orbit horizon • <strong className="text-white">Scroll</strong> to zoom
+                  </span>
+                  <span className="text-amber-400/90 text-[9px]">Ridge Horizon Overlook</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tactical Overhead Landing Zone HUD */}
+          {preferences.cameraPreset === 'overhead' && (
+            <div
+              data-testid="overhead-hud"
+              className="absolute top-14 left-1/2 -translate-x-1/2 z-20 pointer-events-none bg-[var(--lm-color-surface)]/95 backdrop-blur-md border border-emerald-500/50 rounded-[var(--lm-radius-md)] px-3.5 py-1.5 text-xs font-mono shadow-2xl flex items-center gap-3"
+            >
+              <div className="flex items-center gap-1.5 text-emerald-300 font-semibold text-[11px]">
+                <Target className="w-3.5 h-3.5 text-emerald-400" />
+                <span>OVERHEAD NADIR • {selectedSite.code}</span>
+              </div>
+              <div className="text-[10px] text-slate-300 border-l border-emerald-500/30 pl-3 flex items-center gap-2">
+                <span>Tactical 84° Nadir</span>
+                <span>•</span>
+                <span>Drag to rotate azimuth • Scroll to zoom</span>
+              </div>
             </div>
           )}
         </div>
@@ -555,6 +687,24 @@ export function Scenario3DLab() {
               >
                 Grid
               </button>
+
+              {/* 3D Scientific Product Mode Selector */}
+              <div className="flex items-center gap-1 pl-1 border-l border-[var(--lm-color-border-subtle)]">
+                <select
+                  data-testid="select-3d-scientific-layer"
+                  value={preferences.scientificMapMode}
+                  onChange={(e) => selectScientificMapMode(e.target.value as any)}
+                  className="bg-[var(--lm-color-surface-strong)] text-cyan-300 border border-[var(--lm-color-border-subtle)] rounded px-1.5 py-1 text-xs font-mono focus:outline-none cursor-pointer"
+                  title="Select Scientific Surface Map Layer"
+                >
+                  <option value="topography">Topo (LOLA)</option>
+                  <option value="hillshade">Hillshade</option>
+                  <option value="slope">Slope Hazard</option>
+                  <option value="geology">Geology</option>
+                  <option value="illumination">Illumination</option>
+                  <option value="none">Regolith</option>
+                </select>
+              </div>
             </div>
 
             {/* Provenance Badge */}
@@ -602,6 +752,14 @@ export function Scenario3DLab() {
           </div>
         )}
       </div>
+
+      {/* Multi-Site Comparison Navigator Modal */}
+      <SiteComparisonMatrixModal
+        isOpen={isComparisonOpen}
+        onClose={() => setIsComparisonOpen(false)}
+        selectedSiteId={selectedSite.id}
+        onSelectSite={handleSelectSite}
+      />
     </div>
   );
 }

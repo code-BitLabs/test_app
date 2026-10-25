@@ -2,6 +2,7 @@ import { useCallback, useMemo, useReducer } from 'react';
 import {
   CameraPreset,
   DEFAULT_SPATIAL_PREFERENCES,
+  ScientificMapLayerMode,
   SpatialLayer,
   SpatialPreferences,
   spatialPreferencesReducer,
@@ -11,6 +12,7 @@ export interface SpatialPreferenceControls {
   preferences: SpatialPreferences;
   toggleLayer: (layer: SpatialLayer) => void;
   selectCameraPreset: (preset: CameraPreset) => void;
+  selectScientificMapMode: (mode: ScientificMapLayerMode) => void;
 }
 
 /**
@@ -29,9 +31,13 @@ export function useSpatialPreferences(): SpatialPreferenceControls {
     (preset: CameraPreset) => dispatch({ type: 'cameraPreset/selected', preset }),
     [dispatch],
   );
+  const selectScientificMapMode = useCallback(
+    (mode: ScientificMapLayerMode) => dispatch({ type: 'scientificMapMode/selected', mode }),
+    [dispatch],
+  );
 
   return useMemo(
-    () => ({ preferences, toggleLayer, selectCameraPreset }),
-    [preferences, toggleLayer, selectCameraPreset],
+    () => ({ preferences, toggleLayer, selectCameraPreset, selectScientificMapMode }),
+    [preferences, toggleLayer, selectCameraPreset, selectScientificMapMode],
   );
 }

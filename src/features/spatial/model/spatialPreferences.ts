@@ -13,25 +13,30 @@ export type CameraPreset = 'nadir' | 'oblique' | 'overhead' | 'horizon' | 'site'
 
 export type SpatialLayer = 'grid' | 'shadowRegions' | 'craters' | 'vectors';
 
+export type ScientificMapLayerMode = 'none' | 'topography' | 'hillshade' | 'slope' | 'geology' | 'illumination';
+
 export interface SpatialPreferences {
   showGrid: boolean;
   showShadowRegions: boolean;
   showCraters: boolean;
   showVectors: boolean;
   cameraPreset: CameraPreset;
+  scientificMapMode: ScientificMapLayerMode;
 }
 
 export type SpatialPreferenceAction =
   | { type: 'layer/toggled'; layer: SpatialLayer }
-  | { type: 'cameraPreset/selected'; preset: CameraPreset };
+  | { type: 'cameraPreset/selected'; preset: CameraPreset }
+  | { type: 'scientificMapMode/selected'; mode: ScientificMapLayerMode };
 
-/** Opening state: geography and vectors on, nadir camera aligned with the 2D map. */
+/** Opening state: geography and vectors on, nadir camera aligned with the 2D map, LOLA topography active. */
 export const DEFAULT_SPATIAL_PREFERENCES: SpatialPreferences = {
   showGrid: true,
   showShadowRegions: true,
   showCraters: true,
   showVectors: true,
   cameraPreset: 'nadir',
+  scientificMapMode: 'topography',
 };
 
 /** The preferences field that backs each layer. */
@@ -60,6 +65,8 @@ export function spatialPreferencesReducer(
     }
     case 'cameraPreset/selected':
       return state.cameraPreset === action.preset ? state : { ...state, cameraPreset: action.preset };
+    case 'scientificMapMode/selected':
+      return state.scientificMapMode === action.mode ? state : { ...state, scientificMapMode: action.mode };
     default:
       return state;
   }

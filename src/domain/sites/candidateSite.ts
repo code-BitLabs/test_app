@@ -2,9 +2,17 @@
 
 import { LunarCoordinates } from '@/domain/sites/coordinates';
 
-export type CandidateSitePriority = 'Artemis III Candidate' | 'VIPER Target Region' | 'Permanent Shadow Boundary' | 'Benchmark Calibration Site';
+export type CandidateSitePriority =
+  | 'Artemis III Candidate'
+  | 'VIPER Target Region'
+  | 'Permanent Shadow Boundary'
+  | 'Benchmark Calibration Site'
+  | 'CLPS Commercial Mission'
+  | 'Historic Reference Baseline';
 
 export type CandidateEntityType = 'candidate-point' | 'region-centroid' | 'custom-point';
+
+export type SiteCategory = 'artemis-2024' | 'polar-benchmark' | 'clps' | 'historic';
 
 export interface CandidateSite {
   id: string;
@@ -13,6 +21,7 @@ export interface CandidateSite {
   coordinates: LunarCoordinates;
   priority: CandidateSitePriority;
   description: string;
+  category?: SiteCategory;
   // Local horizon terrain profile elevation angles (degrees) relative to mean sphere at sample azimuths
   // Negative values mean dip into depression, positive values mean obstruction by adjacent massifs/rims
   meanTerrainHorizonDeg: number;

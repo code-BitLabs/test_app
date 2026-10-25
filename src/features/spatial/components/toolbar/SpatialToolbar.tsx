@@ -1,3 +1,4 @@
+import { Layers } from 'lucide-react';
 import {
   CameraPreset,
   SpatialLayer,
@@ -17,6 +18,7 @@ export interface SpatialToolbarProps {
   onCameraPresetChange: (preset: CameraPreset) => void;
   isFullscreenActive: boolean;
   onToggleFullscreen: () => void;
+  onOpenComparisonModal?: () => void;
 }
 
 /**
@@ -31,6 +33,7 @@ export function SpatialToolbar({
   onCameraPresetChange,
   isFullscreenActive,
   onToggleFullscreen,
+  onOpenComparisonModal,
 }: SpatialToolbarProps) {
   const cameraPresetsApply = viewMode === 'globe3d' || viewMode === 'dual';
 
@@ -43,6 +46,21 @@ export function SpatialToolbar({
       )}
 
       <LayerToggleGroup preferences={preferences} onToggleLayer={onToggleLayer} />
+
+      {onOpenComparisonModal && (
+        <button
+          type="button"
+          onClick={onOpenComparisonModal}
+          title="Open Landing Site Comparison Navigator (NASA Space Apps 2026 Matrix)"
+          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-[var(--lm-radius-sm)] border border-cyan-500/30 bg-cyan-950/30 text-cyan-300 hover:bg-cyan-900/50 hover:border-cyan-400/50 transition-colors cursor-pointer"
+        >
+          <Layers className="w-3.5 h-3.5 text-cyan-400" />
+          <span>Compare Sites</span>
+          <span className="hidden lg:inline-block px-1 py-0.2 rounded text-[9px] bg-cyan-500/20 text-cyan-300 font-mono">
+            9 Regions
+          </span>
+        </button>
+      )}
 
       <FullscreenToggle isFullscreenActive={isFullscreenActive} onToggleFullscreen={onToggleFullscreen} />
     </div>

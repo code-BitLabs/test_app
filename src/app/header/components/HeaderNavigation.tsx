@@ -1,4 +1,4 @@
-import { Compass, GitCompare, BookOpen } from 'lucide-react';
+import { Compass, GitCompare, BookOpen, Radar } from 'lucide-react';
 import { NavTab } from '@/app/header/config/navTabs';
 import { NavTabButton } from '@/app/header/components/NavTabButton';
 
@@ -7,7 +7,7 @@ interface HeaderNavigationProps {
   onSelect: (tab: NavTab) => void;
 }
 
-/** Primary navigation: Explore, Compare, Method & Data. */
+/** Primary navigation: Explore, Compare, Horizon, Method & Data. */
 export function HeaderNavigation({ activeTab, onSelect }: HeaderNavigationProps) {
   return (
     <nav
@@ -19,7 +19,12 @@ export function HeaderNavigation({ activeTab, onSelect }: HeaderNavigationProps)
       </NavTabButton>
 
       <NavTabButton tab="compare" activeTab={activeTab} onSelect={onSelect} icon={<GitCompare className="w-3.5 h-3.5 shrink-0" />}>
-        <span className="hidden sm:inline">Compare</span>
+        <span className="hidden sm:inline">Navigator</span>
+      </NavTabButton>
+
+      <NavTabButton tab="horizon" activeTab={activeTab} onSelect={onSelect} icon={<Radar className="w-3.5 h-3.5 shrink-0" />}>
+        <span className="hidden sm:inline">Horizon</span>
+        <span className="hidden md:inline"> Radar</span>
       </NavTabButton>
 
       <NavTabButton tab="method" activeTab={activeTab} onSelect={onSelect} icon={<BookOpen className="w-3.5 h-3.5 shrink-0" />}>

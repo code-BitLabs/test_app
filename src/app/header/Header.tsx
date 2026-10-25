@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { UtcTimeControl } from '@/features/time/components/controls/UtcTimeControl';
+import { LiveRealTimeToggle } from '@/features/time/components/controls/LiveRealTimeToggle';
 import { NavTab } from '@/app/header/config/navTabs';
 import { HeaderBrand } from '@/app/header/components/HeaderBrand';
 import { HeaderNavigation } from '@/app/header/components/HeaderNavigation';
@@ -31,9 +32,12 @@ export function Header({ activeTab, onTabChange, isDemoMode }: HeaderProps) {
             <HeaderNavigation activeTab={activeTab} onSelect={onTabChange} />
           </div>
 
-          {/* Right Controls: UTC Epoch & Information Badges */}
+          {/* Right Controls: UTC Epoch, Live Toggle & Information Badges */}
           <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5">
-            <UtcTimeControl />
+            <div className="flex items-center gap-2">
+              <LiveRealTimeToggle />
+              <UtcTimeControl />
+            </div>
 
             <HeaderStatusControls
               isDemoMode={isDemoMode}

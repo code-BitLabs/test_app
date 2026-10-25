@@ -2,12 +2,13 @@ import React from 'react';
 import { CandidateSite } from '@/domain/sites/candidateSite';
 import { ResultAvailability } from '@/domain/celestial/availability';
 import { availableValue } from '@/shared/formatting/availability';
-import { CameraPreset } from '@/features/spatial/model/spatialPreferences';
+import { CameraPreset, ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 import {
   SelenographicLatitudeDeg,
   SelenographicLongitudeDeg,
   TopocentricElevationDeg,
 } from '@/domain/coordinates/frames';
+import { RoverTelemetry } from '@/features/spatial/globe/interaction/lunarRoverController';
 import {
   GlobeLoadingOverlay,
   GlobeTextureErrorBanner,
@@ -47,11 +48,14 @@ export interface LunarGlobe3DProps {
   /** Owned by the workspace so the toolbar and the globe's own buttons agree. */
   cameraPreset: CameraPreset;
   onCameraPresetChange: (preset: CameraPreset) => void;
+  scientificMapMode?: ScientificMapLayerMode;
+  onRoverTelemetryChange?: (telemetry: RoverTelemetry | null) => void;
   /** Optional diagnostics toggle for development and standalone test routes */
   showDiagnostics?: boolean;
   epochIsoUtc?: string;
   isFlyoverActive?: boolean;
   onFlyoverChange?: (active: boolean) => void;
+  isRoverActive?: boolean;
 }
 
 /**
@@ -111,8 +115,11 @@ export function LunarGlobe3D(props: LunarGlobe3DProps) {
     showLabels,
     cameraPreset,
     onCameraPresetChange,
+    scientificMapMode: props.scientificMapMode,
+    onRoverTelemetryChange: props.onRoverTelemetryChange,
     isFlyoverActive,
     onFlyoverChange,
+    isRoverActive: props.isRoverActive,
   });
 
   if (status.kind === 'unsupported') return <GlobeUnavailablePanel />;

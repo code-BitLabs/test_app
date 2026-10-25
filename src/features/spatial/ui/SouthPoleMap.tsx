@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { CandidateSite } from '@/domain/sites/candidateSite';
 import { projectLatLon, type SelenographicCoordinate } from '@/domain/coordinates/projection';
 import { useScenarioCommands, useScenarioModel } from '@/app/scenario/context/scenarioContext';
-import type { SpatialLayer, SpatialPreferences } from '@/features/spatial/model/spatialPreferences';
+import type { ScientificMapLayerMode, SpatialLayer, SpatialPreferences } from '@/features/spatial/model/spatialPreferences';
 import { MapCanvas, type MapHoverPreview } from '@/features/spatial/map/components/MapCanvas';
 import { MapToolbar } from '@/features/spatial/map/components/MapToolbar';
 import { MapScaleBar } from '@/features/spatial/map/components/MapScaleBar';
@@ -21,6 +21,7 @@ export interface SouthPoleMapProps {
   /** Display preferences owned by the workspace, so one toolbar drives map and globe. */
   preferences: SpatialPreferences;
   onToggleLayer: (layer: SpatialLayer) => void;
+  onSelectScientificMapMode?: (mode: ScientificMapLayerMode) => void;
   hideHeader?: boolean;
   hideRibbon?: boolean;
 }
@@ -39,6 +40,7 @@ export interface SouthPoleMapProps {
 export function SouthPoleMap({
   preferences,
   onToggleLayer,
+  onSelectScientificMapMode,
   hideHeader = false,
   hideRibbon = false,
 }: SouthPoleMapProps) {
@@ -169,6 +171,8 @@ export function SouthPoleMap({
         onSelectSite={handleSelectSite}
         onHoverSite={setHoveredSite}
         onOpenVectorPopover={setActiveVectorPopover}
+        scientificMapMode={preferences.scientificMapMode}
+        onSelectScientificMapMode={onSelectScientificMapMode}
         gestures={{
           onMouseDown: viewport.handleMouseDown,
           onMouseMove: viewport.handleMouseMove,

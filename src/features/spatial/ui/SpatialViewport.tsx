@@ -4,7 +4,7 @@ import { SouthPoleMap } from '@/features/spatial/ui/SouthPoleMap';
 import { LunarGlobe3D } from '@/features/spatial/ui/LunarGlobe3D';
 import { VisualizationErrorBoundary } from '@/features/spatial/components/panels/VisualizationErrorBoundary';
 import { ViewportPanel } from '@/features/spatial/components/panels/ViewportPanel';
-import { CameraPreset, SpatialLayer, SpatialPreferences } from '@/features/spatial/model/spatialPreferences';
+import { CameraPreset, ScientificMapLayerMode, SpatialLayer, SpatialPreferences } from '@/features/spatial/model/spatialPreferences';
 import { SpatialViewMode } from '@/features/spatial/model/spatialViewMode';
 import { useScenarioCommands, useScenarioModel } from '@/app/scenario/context/scenarioContext';
 
@@ -14,6 +14,7 @@ export interface SpatialViewportProps {
   onToggleLayer: (layer: SpatialLayer) => void;
   onCameraPresetChange: (preset: CameraPreset) => void;
   onGlobeFallbackTo2D: () => void;
+  onSelectScientificMapMode?: (mode: ScientificMapLayerMode) => void;
 }
 
 /**
@@ -27,6 +28,7 @@ export function SpatialViewport({
   onToggleLayer,
   onCameraPresetChange,
   onGlobeFallbackTo2D,
+  onSelectScientificMapMode,
 }: SpatialViewportProps) {
   const { selectSite } = useScenarioCommands();
   const { site: selectedSite, conditions, ephemeris, epochIsoUtc } = useScenarioModel();
@@ -37,6 +39,7 @@ export function SpatialViewport({
     <SouthPoleMap
       preferences={preferences}
       onToggleLayer={onToggleLayer}
+      onSelectScientificMapMode={onSelectScientificMapMode}
       hideHeader={viewMode !== 'map2d'}
       hideRibbon
     />
@@ -58,6 +61,7 @@ export function SpatialViewport({
         showGrid={preferences.showGrid}
         showShadowRegions={preferences.showShadowRegions}
         showVectors={preferences.showVectors}
+        scientificMapMode={preferences.scientificMapMode}
         onToggleGrid={() => onToggleLayer('grid')}
         onToggleShadowRegions={() => onToggleLayer('shadowRegions')}
         onToggleVectors={() => onToggleLayer('vectors')}

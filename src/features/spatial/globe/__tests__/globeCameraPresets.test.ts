@@ -109,13 +109,15 @@ test('Camera transitioner: step smoothly moves camera and reaches target pose', 
   assert.ok(Math.abs(camera.up.z - 1.0) < 0.01);
 });
 
-test('Camera presets: overhead preset frames candidate nadir with north up', () => {
+test('Camera presets: overhead preset frames candidate nadir with zenith up and steep tactical angle', () => {
   const pose = cameraPoseForPreset('overhead', testSite);
   assert.ok(pose.lookTarget.length() > 1.4 && pose.lookTarget.length() < 1.5, 'Target is on Moon surface');
   const dist = pose.camPos.distanceTo(pose.lookTarget);
-  assert.ok(dist >= 0.12 && dist <= 0.16, `Overhead camera distance should be ~0.14, was ${dist}`);
-  // Up vector is local North
+  assert.ok(dist >= 0.12 && dist <= 0.16, `Overhead camera distance should be ~0.136, was ${dist}`);
+  // Up vector is local zenith (normal) to enable smooth compass yaw rotation in OrbitControls
   assert.ok(Math.abs(pose.upVector.length() - 1.0) < 1e-4);
+  const targetNormal = pose.lookTarget.clone().normalize();
+  assert.ok(pose.upVector.dot(targetNormal) > 0.99, 'Up vector is aligned with local surface normal');
 });
 
 test('Camera presets: horizon preset frames eye-level perspective toward terrain horizon', () => {
@@ -124,5 +126,7 @@ test('Camera presets: horizon preset frames eye-level perspective toward terrain
   const dist = pose.camPos.distanceTo(pose.lookTarget);
   assert.ok(dist < 0.12, `Horizon view look target distance should be compact, was ${dist}`);
   assert.ok(Math.abs(pose.upVector.length() - 1.0) < 1e-4);
+  const targetNormal = pose.lookTarget.clone().normalize();
+  assert.ok(pose.upVector.dot(targetNormal) > 0.95, 'Up vector is aligned with surface normal');
 });
 

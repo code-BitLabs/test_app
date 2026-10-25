@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Info } from 'lucide-react';
+import { useScenario, useScenarioCommands } from '@/app/scenario/context/scenarioContext';
+import { CandidateSite } from '@/domain/sites/candidateSite';
 import { PointPassport } from '@/features/passport/ui/PointPassport';
 import { CandidateRibbon } from '@/features/spatial/components/cards/CandidateRibbon';
 import { PassportDrawer } from '@/features/spatial/components/panels/PassportDrawer';
 import { SpatialToolbar } from '@/features/spatial/components/toolbar/SpatialToolbar';
+import { SiteComparisonMatrixModal } from '@/features/spatial/components/SiteComparisonMatrixModal';
 import { SpatialViewport } from '@/features/spatial/ui/SpatialViewport';
 import {
   DEFAULT_SPATIAL_VIEW_MODE,
@@ -25,7 +28,10 @@ export interface SpatialWorkspaceProps {
  */
 export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps) {
   const [viewMode, setViewMode] = useState<SpatialViewMode>(DEFAULT_SPATIAL_VIEW_MODE);
-  const { preferences, toggleLayer, selectCameraPreset } = useSpatialPreferences();
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
+  const { selectedSiteId } = useScenario();
+  const { selectSite } = useScenarioCommands();
+  const { preferences, toggleLayer, selectCameraPreset, selectScientificMapMode } = useSpatialPreferences();
   const {
     workspaceRef,
     isActiveFullscreen,
@@ -34,6 +40,10 @@ export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps)
     togglePassportOverlay,
     closePassportOverlay,
   } = useWorkspaceFullscreen();
+
+  const handleSelectSiteFromMatrix = (site: CandidateSite) => {
+    selectSite(site.id);
+  };
 
   const toolbar = (
     <SpatialToolbar
@@ -44,6 +54,7 @@ export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps)
       onCameraPresetChange={selectCameraPreset}
       isFullscreenActive={isActiveFullscreen}
       onToggleFullscreen={toggleFullscreen}
+      onOpenComparisonModal={() => setIsComparisonModalOpen(true)}
     />
   );
 
@@ -53,6 +64,7 @@ export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps)
       preferences={preferences}
       onToggleLayer={toggleLayer}
       onCameraPresetChange={selectCameraPreset}
+      onSelectScientificMapMode={selectScientificMapMode}
       onGlobeFallbackTo2D={() => setViewMode('map2d')}
     />
   );
@@ -108,6 +120,13 @@ export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps)
         </div>
 
         <CandidateRibbon />
+
+        <SiteComparisonMatrixModal
+          isOpen={isComparisonModalOpen}
+          onClose={() => setIsComparisonModalOpen(false)}
+          selectedSiteId={selectedSiteId}
+          onSelectSite={handleSelectSiteFromMatrix}
+        />
       </section>
     );
   }
@@ -147,6 +166,13 @@ export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps)
       </div>
 
       <CandidateRibbon />
+
+      <SiteComparisonMatrixModal
+        isOpen={isComparisonModalOpen}
+        onClose={() => setIsComparisonModalOpen(false)}
+        selectedSiteId={selectedSiteId}
+        onSelectSite={handleSelectSiteFromMatrix}
+      />
     </section>
   );
 }

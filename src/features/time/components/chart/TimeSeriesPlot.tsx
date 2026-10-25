@@ -4,6 +4,7 @@ import {
   elevationToY,
   indexToX,
   PLOT_BOTTOM,
+  PLOT_TOP,
   PLOT_LEFT,
   PLOT_RIGHT,
   PLOT_WIDTH,
@@ -40,13 +41,24 @@ export function TimeSeriesPlot({ points, windowHours, hoveredIndex }: TimeSeries
 
   return (
     <>
+      {/* 1. Solar Operational Power Zone (>0°) tint */}
+      <rect
+        x={PLOT_LEFT}
+        y={PLOT_TOP}
+        width={PLOT_WIDTH}
+        height={Math.max(0, zeroY - PLOT_TOP)}
+        fill="#f59e0b"
+        opacity="0.04"
+      />
+
+      {/* 2. Sub-Horizon Polar Darkness (<0°) background */}
       <rect
         x={PLOT_LEFT}
         y={zeroY}
         width={PLOT_WIDTH}
-        height={PLOT_BOTTOM - zeroY}
+        height={Math.max(0, PLOT_BOTTOM - zeroY)}
         fill={SUB_HORIZON_FILL}
-        opacity="0.85"
+        opacity="0.90"
       />
 
       {TIME_CHART_GRID_ELEV_DEG.map((elev) => {
@@ -59,18 +71,18 @@ export function TimeSeriesPlot({ points, windowHours, hoveredIndex }: TimeSeries
               y1={y}
               x2={PLOT_RIGHT}
               y2={y}
-              stroke={isZero ? ZERO_HORIZON_COLOR : 'var(--lm-color-border-subtle)'}
-              strokeWidth={isZero ? 1.5 : 0.8}
-              strokeDasharray={isZero ? '5 4' : '2 3'}
-              strokeOpacity={isZero ? 0.85 : 0.3}
+              stroke={isZero ? ZERO_HORIZON_COLOR : '#334155'}
+              strokeWidth={isZero ? 1.8 : 0.75}
+              strokeDasharray={isZero ? '6 4' : '3 3'}
+              strokeOpacity={isZero ? 0.95 : 0.55}
             />
             <text
               x={PLOT_LEFT - AXIS_LABEL_OFFSET}
               y={y + AXIS_LABEL_BASELINE}
               textAnchor="end"
-              fill={isZero ? ZERO_HORIZON_COLOR : 'var(--lm-color-text-muted)'}
-              fontSize={GRID_FONT_SIZE}
-              fontWeight={isZero ? 'bold' : 'normal'}
+              fill={isZero ? ZERO_HORIZON_COLOR : '#cbd5e1'}
+              fontSize="10"
+              fontWeight={isZero ? 'bold' : '600'}
               fontFamily="monospace"
             >
               {elev > 0 ? `+${elev}°` : `${elev}°`}
@@ -84,12 +96,12 @@ export function TimeSeriesPlot({ points, windowHours, hoveredIndex }: TimeSeries
         y={zeroY - 6}
         textAnchor="end"
         fill={ZERO_HORIZON_COLOR}
-        fontSize="9"
+        fontSize="10"
         fontWeight="bold"
         fontFamily="monospace"
-        opacity="0.85"
+        opacity="0.95"
       >
-        0° Mean Horizon Reference
+        0° Local Horizon (Sun &amp; DTE Threshold)
       </text>
 
       <path
@@ -147,15 +159,16 @@ export function TimeSeriesPlot({ points, windowHours, hoveredIndex }: TimeSeries
                   y1={PLOT_BOTTOM}
                   x2={x}
                   y2={PLOT_BOTTOM + TICK_LINE_LENGTH}
-                  stroke="var(--lm-color-border-subtle)"
-                  strokeWidth="1"
+                  stroke="#475569"
+                  strokeWidth="1.2"
                 />
                 <text
                   x={x}
                   y={PLOT_BOTTOM + TICK_LABEL_OFFSET}
                   textAnchor="middle"
-                  fill="var(--lm-color-text-muted)"
-                  fontSize={GRID_FONT_SIZE}
+                  fill="#94a3b8"
+                  fontSize="10"
+                  fontWeight="600"
                   fontFamily="monospace"
                 >
                   {tickLabel(p, windowHours)}

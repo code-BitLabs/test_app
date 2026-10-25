@@ -112,7 +112,8 @@ export const zoomAroundFocalPoint = zoomAroundScreenPoint;
  * Computes the optimal viewport to fit all candidate sites with comfortable margin.
  */
 export function computeFitAllViewport(center: number): MapViewport {
-  const points = CANDIDATE_SITES.map((site) =>
+  const polarSites = CANDIDATE_SITES.filter((site) => site.coordinates.latitudeDeg <= -80.0);
+  const points = polarSites.map((site) =>
     projectLatLon(site.coordinates.latitudeDeg, site.coordinates.longitudeDeg)
   );
 

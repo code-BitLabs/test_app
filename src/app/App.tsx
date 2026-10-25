@@ -4,6 +4,7 @@ import { NavTab } from '@/app/header/config/navTabs';
 import { SpatialWorkspace } from '@/features/spatial/ui/SpatialWorkspace';
 import { TimeExplorer } from '@/features/time/ui/TimeExplorer';
 import { ComparisonMatrix } from '@/features/comparison/ui/ComparisonMatrix';
+import { TopocentricHorizonView } from '@/features/horizon/ui/TopocentricHorizonView';
 import { MethodAndDataView } from '@/features/methodology/ui/MethodAndDataView';
 import { CandidateSite } from '@/domain/sites/candidateSite';
 import { useScenarioCommands, useScenarioModel } from '@/app/scenario/context/scenarioContext';
@@ -69,6 +70,12 @@ export default function App() {
         {activeTab === 'compare' && (
           <section className="w-full min-w-0" aria-label="Candidate Sites Comparison Matrix">
             <ComparisonMatrix onSelectSiteForExplore={handleSelectSiteForExplore} />
+          </section>
+        )}
+
+        {activeTab === 'horizon' && (
+          <section className="w-full min-w-0" aria-label="Topocentric Horizon Radar and Sky Dome">
+            <TopocentricHorizonView />
           </section>
         )}
 

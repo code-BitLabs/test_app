@@ -4,6 +4,7 @@ import { CRATERS } from '@/features/spatial/map/layers/CraterLayer';
 import { CANDIDATE_SITES } from '@/domain/sites/catalog';
 
 import { createMultiLodTerrainMesh, MultiLodTerrainMesh, TerrainDiagnostics } from '@/features/spatial/globe/terrain/globeMultiLodTerrain';
+import { ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 
 /** Conversion constant: Moon radius is 1737.4 km in reality, MOON_SCENE_RADIUS (1.45) in scene units */
 const KM_TO_SCENE_UNITS = MOON_SCENE_RADIUS / 1737.4;
@@ -14,6 +15,7 @@ export interface PolarTerrainGroup {
   multiLodTerrain: MultiLodTerrainMesh;
   updateSelectedSite: (selectedSiteId: string) => void;
   updateLOD: (cameraDistanceToTarget: number) => void;
+  setScientificMode: (mode: ScientificMapLayerMode) => void;
   setCraterOutlinesVisible: (visible: boolean) => void;
   getTerrainDiagnostics: () => TerrainDiagnostics;
   dispose: () => void;
@@ -175,6 +177,9 @@ export function createPolarTerrainFeatures(initialSelectedSiteId: string): Polar
       const site = CANDIDATE_SITES.find((s) => s.id === siteId) || CANDIDATE_SITES[0];
       buildBenchmark(siteId);
       multiLodTerrain.updateSite(site);
+    },
+    setScientificMode: (mode: ScientificMapLayerMode) => {
+      multiLodTerrain.setScientificMode(mode);
     },
     updateLOD: (cameraDistanceToTarget: number) => {
       multiLodTerrain.updateLOD(cameraDistanceToTarget);

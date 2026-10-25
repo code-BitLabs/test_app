@@ -13,6 +13,7 @@ test('spatialPreferences: defaults match the opening workspace', () => {
     showCraters: true,
     showVectors: true,
     cameraPreset: 'nadir',
+    scientificMapMode: 'topography',
   });
 });
 
@@ -52,6 +53,23 @@ test('spatialPreferences: camera preset selection replaces the previous preset',
 
   // Re-selecting the active preset keeps state identity so consumers do not re-render.
   assert.equal(spatialPreferencesReducer(site, { type: 'cameraPreset/selected', preset: 'site' }), site);
+});
+
+test('spatialPreferences: scientific map mode selection switches mode cleanly', () => {
+  const hillshade = spatialPreferencesReducer(DEFAULT_SPATIAL_PREFERENCES, {
+    type: 'scientificMapMode/selected',
+    mode: 'hillshade',
+  });
+  assert.equal(hillshade.scientificMapMode, 'hillshade');
+
+  const slope = spatialPreferencesReducer(hillshade, {
+    type: 'scientificMapMode/selected',
+    mode: 'slope',
+  });
+  assert.equal(slope.scientificMapMode, 'slope');
+
+  // Re-selecting identical mode preserves state identity
+  assert.equal(spatialPreferencesReducer(slope, { type: 'scientificMapMode/selected', mode: 'slope' }), slope);
 });
 
 test('spatialPreferences: unknown action leaves preferences unchanged', () => {

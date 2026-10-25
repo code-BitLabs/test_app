@@ -119,18 +119,21 @@ export function cameraPoseForPreset(preset: CameraPreset, site: CandidateSite): 
   }
 
   if (preset === 'overhead') {
-    // High-Angle Overhead Landing Zone: Top-down tactical nadir perspective on candidate
-    // Distance 0.12 scene units with Local North pointing up on screen
-    const distance = 0.12;
+    // Steep High-Angle Tactical Nadir: ~84° topocentric elevation angle centered on candidate datum
+    // Altitude 0.135 scene units with slight southern offset (0.014 units) to eliminate the polar gimbal lock.
+    // Up-vector set to normal (zenith) so horizontal OrbitControls drag rotates compass azimuth smoothly around local zenith
+    // without ever dipping into the ground or triggering collision clamp.
+    const altitude = 0.135;
+    const tangentOffset = 0.014;
     const camPos = surfacePos
       .clone()
-      .add(normal.clone().multiplyScalar(distance))
-      .add(north.clone().multiplyScalar(0.0001));
+      .add(normal.clone().multiplyScalar(altitude))
+      .add(north.clone().multiplyScalar(-tangentOffset));
 
     return {
       camPos,
       lookTarget: surfacePos.clone(),
-      upVector: north.clone(),
+      upVector: normal.clone(),
     };
   }
 
