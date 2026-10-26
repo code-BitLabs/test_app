@@ -7,12 +7,14 @@ import { CustomLandingTarget } from '@/domain/target/customTargetModel';
 export interface CandidateRibbonProps {
   onSelectCustomTarget?: (target: CustomLandingTarget) => void;
   selectedCustomTargetId?: string | null;
+  onOpenMissionDossier?: () => void;
 }
 
 /** Site picker shared by the standard and fullscreen workspace footers. */
 export function CandidateRibbon({
   onSelectCustomTarget,
   selectedCustomTargetId,
+  onOpenMissionDossier,
 }: CandidateRibbonProps) {
   const { site: selectedSite } = useScenarioModel();
   const { selectSite } = useScenarioCommands();
@@ -69,6 +71,18 @@ export function CandidateRibbon({
           );
         })}
       </div>
+
+      {onOpenMissionDossier && (
+        <button
+          type="button"
+          onClick={onOpenMissionDossier}
+          title="Export Aerospace Mission Dossier for Active Target"
+          className="ml-auto shrink-0 flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono rounded-[var(--lm-radius-sm)] border border-indigo-500/40 bg-indigo-950/40 text-indigo-300 hover:bg-indigo-900/60 hover:text-white transition-colors cursor-pointer"
+        >
+          <span>📑</span>
+          <span>Export Dossier</span>
+        </button>
+      )}
     </footer>
   );
 }

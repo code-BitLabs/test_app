@@ -28,19 +28,13 @@ export interface SpatialWorkspaceProps {
 export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps) {
   const [viewMode, setViewMode] = useState<SpatialViewMode>(DEFAULT_SPATIAL_VIEW_MODE);
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
+  const [isDossierOpen, setIsDossierOpen] = useState(false);
   const { selectedSiteId } = useScenario();
   const { selectSite } = useScenarioCommands();
   const { site: selectedSite, epochMs } = useScenarioModel();
   const targetManager = useCustomTargetManager(selectedSite, epochMs, typeof window !== 'undefined' ? window.localStorage : null);
   const { preferences, toggleLayer, selectCameraPreset, selectScientificMapMode } = useSpatialPreferences();
-  const {
-    workspaceRef,
-    isActiveFullscreen,
-    showPassportOverlay,
-    toggleFullscreen,
-    togglePassportOverlay,
-    closePassportOverlay,
-  } = useWorkspaceFullscreen();
+  const { workspaceRef, isActiveFullscreen, showPassportOverlay, toggleFullscreen, togglePassportOverlay, closePassportOverlay } = useWorkspaceFullscreen();
 
   const toolbar = (
     <SpatialToolbar
@@ -49,6 +43,7 @@ export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps)
       onCameraPresetChange={selectCameraPreset}
       isFullscreenActive={isActiveFullscreen} onToggleFullscreen={toggleFullscreen}
       onOpenComparisonModal={() => setIsComparisonModalOpen(true)}
+      onOpenMissionDossier={() => setIsDossierOpen(true)}
       onOpenCustomTargetStudio={() => targetManager.openStudio()}
       isPinpointMode={targetManager.isPinpointMode} onTogglePinpointMode={targetManager.togglePinpoint}
     />
@@ -134,13 +129,13 @@ export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps)
         <CandidateRibbon
           selectedCustomTargetId={targetManager.customTarget?.id}
           onSelectCustomTarget={targetManager.setCustomTarget}
+          onOpenMissionDossier={() => setIsDossierOpen(true)}
         />
 
         <WorkspaceModals
-          isComparisonModalOpen={isComparisonModalOpen}
-          onCloseComparison={() => setIsComparisonModalOpen(false)}
-          selectedSiteId={selectedSiteId}
-          onSelectSite={(site) => selectSite(site.id)}
+          isComparisonModalOpen={isComparisonModalOpen} onCloseComparison={() => setIsComparisonModalOpen(false)}
+          isDossierOpen={isDossierOpen} onCloseDossier={() => setIsDossierOpen(false)}
+          selectedSite={selectedSite} epochMs={epochMs} onSelectSite={(s) => selectSite(s.id)}
           targetManager={targetManager}
         />
       </section>
@@ -184,13 +179,13 @@ export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps)
       <CandidateRibbon
         selectedCustomTargetId={targetManager.customTarget?.id}
         onSelectCustomTarget={targetManager.setCustomTarget}
+        onOpenMissionDossier={() => setIsDossierOpen(true)}
       />
 
       <WorkspaceModals
-        isComparisonModalOpen={isComparisonModalOpen}
-        onCloseComparison={() => setIsComparisonModalOpen(false)}
-        selectedSiteId={selectedSiteId}
-        onSelectSite={(site) => selectSite(site.id)}
+        isComparisonModalOpen={isComparisonModalOpen} onCloseComparison={() => setIsComparisonModalOpen(false)}
+        isDossierOpen={isDossierOpen} onCloseDossier={() => setIsDossierOpen(false)}
+        selectedSite={selectedSite} epochMs={epochMs} onSelectSite={(s) => selectSite(s.id)}
         targetManager={targetManager}
       />
     </section>

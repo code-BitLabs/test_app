@@ -29,27 +29,40 @@
 | **Phase 6** | **Automated E2E Verification & Manual Testing Readiness** | ✅ Complete | 289 tests green, live daemons on `:3000` & `:3001`, browser snapshots verified |
 | **Phase 7** | **NASA SVS Flight-Grade Planetary Visualizer** (`src/features/spatial/globe/`) | ✅ Complete | NASA SVS 3727/3760/3633, radial spherical polar cap, Blue Marble Earth, 308 tests green |
 | **Phase 8** | **Custom Landing Target Studio** (`src/domain/target/`, `src/features/spatial/target/`) | ✅ Complete | Arbitrary polar coordinates, 3D click-to-pin, LOLA DEM elevation, DSN RF link budget, 328 tests green |
+| **Phase 9** | **Executive Mission Dossier Exporter** (`src/domain/dossier/`, `server/`, `src/features/dossier/`) | ✅ Complete | Multi-domain synthesis (LOLA+DSN+ISRU+Traverse), NextRush `/api/dossier/generate`, vector PDF print, 340 tests green |
 
 ---
 
 ## 2. Test Suite & Architecture Invariants
 
-- **Total Passing Tests:** 328 across 64 test files (`bun test`)
+- **Total Passing Tests:** 340 across 68 test files (`bun test`)
 - **TypeScript Static Errors:** 0 (verified in root and `server/` with `tsc --noEmit`)
-- **Vite Production Bundle:** Built cleanly in 486ms (`bun run build`)
+- **Vite Production Bundle:** Built cleanly in 539ms (`bun run build`)
 - **Package Manager Rule:** Strictly `bun` (no npm)
 - **Domain Purity:** `src/domain/` has zero React/DOM/Node/framework imports (enforced by `domainBoundaries.test.ts`)
 - **File-Size Hard Ceilings Compliance:**
-  - UI Components: All $\le 199$ lines (`LunarGlobe3D.tsx` at 199L, `SpatialWorkspace.tsx` at 198L, `CustomTargetStudioModal.tsx` at 194L, `CustomTargetCompareCard.tsx` at 119L)
-  - Pure Domain / Utils: All $\le 210$ lines (`customTargetModel.ts` at 210L, `targetComparison.ts` at 136L, `customTargetStorage.ts` at 113L)
+  - UI Components: All $\le 199$ lines (`LunarGlobe3D.tsx` at 199L, `SpatialWorkspace.tsx` at 193L, `MissionDossierModal.tsx` at 190L, `CustomTargetStudioModal.tsx` at 194L, `CustomTargetCompareCard.tsx` at 119L)
+  - Pure Domain / Utils: All $\le 260$ lines (`missionDossierModel.ts` at 259L, `customTargetModel.ts` at 210L, `dossierMarkdownFormatter.ts` at 155L, `targetComparison.ts` at 136L, `customTargetStorage.ts` at 113L)
   - Server Modules / Services: All $\le 65$ lines
-  - Controllers / Route Handlers: All $\le 45$ lines
-  - Schemas / Validation: All $\le 25$ lines
+  - Controllers / Route Handlers: All $\le 45$ lines (`dossierRoutes.ts` at 43L)
+  - Schemas / Validation: All $\le 26$ lines (`dossierSchema.ts` at 26L)
   - Test Suites: All $\le 272$ lines
 
 ---
 
 ## 3. Active Work Log
+
+### Phase 9: Executive Mission Dossier Exporter (COMPLETED)
+- [x] Implemented pure domain module `src/domain/dossier/missionDossierModel.ts` (259L) synthesizing site geodesy, topocentric solar grazing angles, DSN RF link budget, LEND/Diviner ISRU yield, and rover traversal into a unified mission briefing model.
+- [x] Implemented domain formatter `src/domain/dossier/dossierMarkdownFormatter.ts` (155L) generating publication-ready GitHub-Flavored Markdown briefings and machine-readable JSON telemetry.
+- [x] Built NextRush calculation microservice route `POST /api/dossier/generate` with Zod validation in `server/src/schemas/dossierSchema.ts` (26L) and `server/src/routes/dossierRoutes.ts` (43L).
+- [x] Implemented resilient client adapter `src/features/dossier/services/dossierApiClient.ts` (77L) with transparent local domain fallback when the microservice is offline.
+- [x] Built responsive UI modal `MissionDossierModal.tsx` (190L) with Markdown preview, JSON telemetry tab, copy actions, file download, and vector-print CSS rules (`@media print`).
+- [x] Integrated "Dossier" export triggers into `SpatialToolbar.tsx`, `CandidateRibbon.tsx`, and `WorkspaceModals.tsx`.
+- [x] Verified full browser visual rendering and print layout via `agent-browser`:
+  - `mission-dossier-modal.png`: Executive Mission Dossier modal with NextRush backend status and Markdown briefing.
+  - `mission-dossier-json.png`: JSON telemetry interchange tab with raw numerical ephemeris.
+- [x] 340 tests pass with 0 errors across 68 test files (`bun test`).
 
 ### Phase 8: Custom Landing Target Studio (COMPLETED)
 - [x] Implemented pure domain module `src/domain/target/customTargetModel.ts` and `src/domain/target/targetComparison.ts` with coordinate bounds validation, LOLA DEM elevation resolution, nearest catalog matching, and multi-domain comparative delta scoring.

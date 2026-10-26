@@ -291,6 +291,15 @@ gantt
   - OpenSpec change `custom-landing-target-studio` (8/8 tasks completed, spec synced to `custom-target-studio`, archived to `openspec/changes/archive/2026-10-26-custom-landing-target-studio`).
   - Test suite expanded to 328 green tests across 64 test files.
 
+- [x] **Executive Mission Dossier Exporter (Publication-Ready Aerospace Briefings)**:
+  - Synthesize site geodesy, topocentric solar grazing angles, DSN RF link budget, LEND/Diviner ISRU yield, and rover traversal into a publication-ready mission briefing.
+  - Multi-format generation: GitHub-Flavored Markdown briefings, machine-readable JSON telemetry, and print-ready CSS layout (`@media print`).
+  - NextRush calculation microservice route `POST /api/dossier/generate` with Zod schema validation and resilient client fallback.
+  - Interactive `MissionDossierModal.tsx` (190L) with Markdown preview, JSON raw tab, copy actions, file download, and native vector PDF printing.
+  - Export triggers in Spatial Toolbar and Candidate Ribbon.
+  - OpenSpec change `executive-mission-dossier` (12/12 tasks completed).
+  - Test suite expanded to 340 green tests across 68 test files.
+
 ### Ready for Next Steps:
-- Manual testing by the developer / user.
-- Any additional feature or polish as directed.
+- Manual testing and dogfooding by the developer / user.
+- Space Apps final submission write-up and championship video pitch.

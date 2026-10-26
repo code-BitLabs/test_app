@@ -1,4 +1,4 @@
-import { Layers } from 'lucide-react';
+import { Layers, FileText } from 'lucide-react';
 import {
   CameraPreset,
   SpatialLayer,
@@ -19,6 +19,7 @@ export interface SpatialToolbarProps {
   isFullscreenActive: boolean;
   onToggleFullscreen: () => void;
   onOpenComparisonModal?: () => void;
+  onOpenMissionDossier?: () => void;
   onOpenCustomTargetStudio?: () => void;
   isPinpointMode?: boolean;
   onTogglePinpointMode?: () => void;
@@ -37,6 +38,7 @@ export function SpatialToolbar({
   isFullscreenActive,
   onToggleFullscreen,
   onOpenComparisonModal,
+  onOpenMissionDossier,
   onOpenCustomTargetStudio,
   isPinpointMode,
   onTogglePinpointMode,
@@ -93,6 +95,18 @@ export function SpatialToolbar({
           <span className="hidden lg:inline-block px-1 py-0.2 rounded text-[9px] bg-cyan-500/20 text-cyan-300 font-mono">
             9 Regions
           </span>
+        </button>
+      )}
+
+      {onOpenMissionDossier && (
+        <button
+          type="button"
+          onClick={onOpenMissionDossier}
+          title="Generate Executive Aerospace Mission Briefing (PDF/Markdown Dossier)"
+          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-[var(--lm-radius-sm)] border border-indigo-500/30 bg-indigo-950/30 text-indigo-300 hover:bg-indigo-900/50 hover:border-indigo-400/50 transition-colors cursor-pointer"
+        >
+          <FileText className="w-3.5 h-3.5 text-indigo-400" />
+          <span>Dossier</span>
         </button>
       )}
 

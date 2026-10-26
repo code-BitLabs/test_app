@@ -10,6 +10,7 @@ import { createTelecomRouter } from '@server/routes/telecomRoutes';
 import { traversalRouter } from '@server/routes/traversalRoutes';
 import { volatileRouter } from '@server/routes/volatileRoutes';
 import { windowRouter } from '@server/routes/windowRoutes';
+import { dossierRouter } from '@server/routes/dossierRoutes';
 
 export function createServerApp() {
   const app = createApp();
@@ -37,6 +38,7 @@ export function createServerApp() {
   apiRouter.mount('/traversal', traversalRouter);
   apiRouter.mount('/volatiles', volatileRouter);
   apiRouter.mount('/windows', windowRouter);
+  apiRouter.mount('/dossier', dossierRouter);
 
   app.route('/api', apiRouter);
 
