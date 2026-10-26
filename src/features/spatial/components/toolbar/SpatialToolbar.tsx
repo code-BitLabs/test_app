@@ -19,6 +19,9 @@ export interface SpatialToolbarProps {
   isFullscreenActive: boolean;
   onToggleFullscreen: () => void;
   onOpenComparisonModal?: () => void;
+  onOpenCustomTargetStudio?: () => void;
+  isPinpointMode?: boolean;
+  onTogglePinpointMode?: () => void;
 }
 
 /**
@@ -34,6 +37,9 @@ export function SpatialToolbar({
   isFullscreenActive,
   onToggleFullscreen,
   onOpenComparisonModal,
+  onOpenCustomTargetStudio,
+  isPinpointMode,
+  onTogglePinpointMode,
 }: SpatialToolbarProps) {
   const cameraPresetsApply = viewMode === 'globe3d' || viewMode === 'dual';
 
@@ -46,6 +52,34 @@ export function SpatialToolbar({
       )}
 
       <LayerToggleGroup preferences={preferences} onToggleLayer={onToggleLayer} />
+
+      {onOpenCustomTargetStudio && (
+        <button
+          type="button"
+          onClick={onOpenCustomTargetStudio}
+          title="Open Custom Landing Target Studio (Specify Lat/Lon or LOLA coordinates)"
+          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-[var(--lm-radius-sm)] border border-amber-500/30 bg-amber-950/30 text-amber-300 hover:bg-amber-900/50 hover:border-amber-400/50 transition-colors cursor-pointer"
+        >
+          <span>📍</span>
+          <span>Target Studio</span>
+        </button>
+      )}
+
+      {onTogglePinpointMode && (viewMode === 'globe3d' || viewMode === 'dual') && (
+        <button
+          type="button"
+          onClick={onTogglePinpointMode}
+          title="Click to drop a pin anywhere on the 3D Moon sphere"
+          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-[var(--lm-radius-sm)] border transition-colors cursor-pointer ${
+            isPinpointMode
+              ? 'border-amber-400 bg-amber-500/20 text-amber-200 animate-pulse'
+              : 'border-slate-700 bg-slate-900/50 text-slate-300 hover:bg-slate-800'
+          }`}
+        >
+          <span>🎯</span>
+          <span>{isPinpointMode ? 'Click Moon to Pin' : 'Pin 3D'}</span>
+        </button>
+      )}
 
       {onOpenComparisonModal && (
         <button

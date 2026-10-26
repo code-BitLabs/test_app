@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { CandidateSite } from '@/domain/sites/candidateSite';
+import { CustomLandingTarget } from '@/domain/target/customTargetModel';
 import { CameraPreset, ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 import {
   SelenographicLatitudeDeg,
@@ -32,6 +33,7 @@ export interface GlobeSceneSyncInput {
   cameraPreset: CameraPreset;
   applyCameraPreset: (preset: CameraPreset, site: CandidateSite) => void;
   isRoverActive?: boolean;
+  customTarget?: CustomLandingTarget | null;
 }
 
 /**
@@ -143,4 +145,9 @@ export function useGlobeSceneSync(input: GlobeSceneSyncInput): void {
     if (!handle || typeof handle.setRoverActive !== 'function') return;
     handle.setRoverActive(Boolean(input.isRoverActive));
   }, [handleRef, input.isRoverActive]);
+
+  // Custom target beacon notifications
+  useEffect(() => {
+    handleRef.current?.setCustomTarget?.(input.customTarget ?? null);
+  }, [handleRef, input.customTarget]);
 }

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Info } from 'lucide-react';
-import { useScenario, useScenarioCommands } from '@/app/scenario/context/scenarioContext';
+import { useScenario, useScenarioCommands, useScenarioModel } from '@/app/scenario/context/scenarioContext';
 import { CandidateSite } from '@/domain/sites/candidateSite';
 import { PointPassport } from '@/features/passport/ui/PointPassport';
 import { CandidateRibbon } from '@/features/spatial/components/cards/CandidateRibbon';
 import { PassportDrawer } from '@/features/spatial/components/panels/PassportDrawer';
 import { SpatialToolbar } from '@/features/spatial/components/toolbar/SpatialToolbar';
-import { SiteComparisonMatrixModal } from '@/features/spatial/components/SiteComparisonMatrixModal';
+import { WorkspaceModals } from '@/features/spatial/components/panels/WorkspaceModals';
 import { SpatialViewport } from '@/features/spatial/ui/SpatialViewport';
 import {
   DEFAULT_SPATIAL_VIEW_MODE,
@@ -15,22 +15,23 @@ import {
 } from '@/features/spatial/model/spatialViewMode';
 import { useSpatialPreferences } from '@/features/spatial/hooks/useSpatialPreferences';
 import { useWorkspaceFullscreen } from '@/features/spatial/hooks/useWorkspaceFullscreen';
+import { useCustomTargetManager } from '@/features/spatial/target/hooks/useCustomTargetManager';
+import { CustomTargetCompareCard } from '@/features/spatial/target/CustomTargetCompareCard';
 
 export interface SpatialWorkspaceProps {
   onOpenMethodDetails: () => void;
 }
 
 /**
- * Composition shell for the spatial workspace: which panels are shown
- * (`viewMode`), how large they are drawn (fullscreen), and the display
- * preferences both visualizations share. Scenario state comes from the
- * scenario provider, so the panels read it without prop drilling.
+ * Composition shell for the spatial workspace.
  */
 export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps) {
   const [viewMode, setViewMode] = useState<SpatialViewMode>(DEFAULT_SPATIAL_VIEW_MODE);
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const { selectedSiteId } = useScenario();
   const { selectSite } = useScenarioCommands();
+  const { site: selectedSite, epochMs } = useScenarioModel();
+  const targetManager = useCustomTargetManager(selectedSite, epochMs, typeof window !== 'undefined' ? window.localStorage : null);
   const { preferences, toggleLayer, selectCameraPreset, selectScientificMapMode } = useSpatialPreferences();
   const {
     workspaceRef,
@@ -41,32 +42,43 @@ export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps)
     closePassportOverlay,
   } = useWorkspaceFullscreen();
 
-  const handleSelectSiteFromMatrix = (site: CandidateSite) => {
-    selectSite(site.id);
-  };
-
   const toolbar = (
     <SpatialToolbar
-      viewMode={viewMode}
-      onViewModeChange={setViewMode}
-      preferences={preferences}
-      onToggleLayer={toggleLayer}
+      viewMode={viewMode} onViewModeChange={setViewMode}
+      preferences={preferences} onToggleLayer={toggleLayer}
       onCameraPresetChange={selectCameraPreset}
-      isFullscreenActive={isActiveFullscreen}
-      onToggleFullscreen={toggleFullscreen}
+      isFullscreenActive={isActiveFullscreen} onToggleFullscreen={toggleFullscreen}
       onOpenComparisonModal={() => setIsComparisonModalOpen(true)}
+      onOpenCustomTargetStudio={() => targetManager.openStudio()}
+      isPinpointMode={targetManager.isPinpointMode} onTogglePinpointMode={targetManager.togglePinpoint}
     />
   );
 
   const viewport = (
-    <SpatialViewport
-      viewMode={viewMode}
-      preferences={preferences}
-      onToggleLayer={toggleLayer}
-      onCameraPresetChange={selectCameraPreset}
-      onSelectScientificMapMode={selectScientificMapMode}
-      onGlobeFallbackTo2D={() => setViewMode('map2d')}
-    />
+    <div className="relative w-full h-full min-h-0 flex-1 flex flex-col">
+      <SpatialViewport
+        viewMode={viewMode}
+        preferences={preferences}
+        onToggleLayer={toggleLayer}
+        onCameraPresetChange={selectCameraPreset}
+        onSelectScientificMapMode={selectScientificMapMode}
+        onGlobeFallbackTo2D={() => setViewMode('map2d')}
+        customTarget={targetManager.customTarget}
+        isPinpointMode={targetManager.isPinpointMode}
+        onPinpointCustomTarget={targetManager.saveTarget}
+      />
+      {targetManager.customTarget && targetManager.evaluation && targetManager.deltas && (
+        <div className="absolute bottom-3 left-3 z-20 max-w-sm pointer-events-auto">
+          <CustomTargetCompareCard
+            target={targetManager.customTarget}
+            evaluation={targetManager.evaluation}
+            deltas={targetManager.deltas}
+            onClearTarget={targetManager.clearTarget}
+            onEditTarget={() => targetManager.openStudio(targetManager.customTarget)}
+          />
+        </div>
+      )}
+    </div>
   );
 
   if (isActiveFullscreen) {
@@ -119,13 +131,17 @@ export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps)
           )}
         </div>
 
-        <CandidateRibbon />
+        <CandidateRibbon
+          selectedCustomTargetId={targetManager.customTarget?.id}
+          onSelectCustomTarget={targetManager.setCustomTarget}
+        />
 
-        <SiteComparisonMatrixModal
-          isOpen={isComparisonModalOpen}
-          onClose={() => setIsComparisonModalOpen(false)}
+        <WorkspaceModals
+          isComparisonModalOpen={isComparisonModalOpen}
+          onCloseComparison={() => setIsComparisonModalOpen(false)}
           selectedSiteId={selectedSiteId}
-          onSelectSite={handleSelectSiteFromMatrix}
+          onSelectSite={(site) => selectSite(site.id)}
+          targetManager={targetManager}
         />
       </section>
     );
@@ -165,13 +181,17 @@ export function SpatialWorkspace({ onOpenMethodDetails }: SpatialWorkspaceProps)
         </div>
       </div>
 
-      <CandidateRibbon />
+      <CandidateRibbon
+        selectedCustomTargetId={targetManager.customTarget?.id}
+        onSelectCustomTarget={targetManager.setCustomTarget}
+      />
 
-      <SiteComparisonMatrixModal
-        isOpen={isComparisonModalOpen}
-        onClose={() => setIsComparisonModalOpen(false)}
+      <WorkspaceModals
+        isComparisonModalOpen={isComparisonModalOpen}
+        onCloseComparison={() => setIsComparisonModalOpen(false)}
         selectedSiteId={selectedSiteId}
-        onSelectSite={handleSelectSiteFromMatrix}
+        onSelectSite={(site) => selectSite(site.id)}
+        targetManager={targetManager}
       />
     </section>
   );

@@ -28,27 +28,42 @@
 | **Phase 5** | **Astronaut Helmet HUD & First-Person Surface Mode** (`src/features/spatial/`) | ✅ Complete | xEMU suit PLSS model, grazing glare alert, scarp danger warning, Three.js HUD (182L) |
 | **Phase 6** | **Automated E2E Verification & Manual Testing Readiness** | ✅ Complete | 289 tests green, live daemons on `:3000` & `:3001`, browser snapshots verified |
 | **Phase 7** | **NASA SVS Flight-Grade Planetary Visualizer** (`src/features/spatial/globe/`) | ✅ Complete | NASA SVS 3727/3760/3633, radial spherical polar cap, Blue Marble Earth, 308 tests green |
+| **Phase 8** | **Custom Landing Target Studio** (`src/domain/target/`, `src/features/spatial/target/`) | ✅ Complete | Arbitrary polar coordinates, 3D click-to-pin, LOLA DEM elevation, DSN RF link budget, 328 tests green |
 
 ---
 
 ## 2. Test Suite & Architecture Invariants
 
-- **Total Passing Tests:** 308 across 61 test files (`bun test`)
+- **Total Passing Tests:** 328 across 64 test files (`bun test`)
 - **TypeScript Static Errors:** 0 (verified in root and `server/` with `tsc --noEmit`)
-- **Vite Production Bundle:** Built cleanly in 3.23s (`bun run build`)
+- **Vite Production Bundle:** Built cleanly in 486ms (`bun run build`)
 - **Package Manager Rule:** Strictly `bun` (no npm)
 - **Domain Purity:** `src/domain/` has zero React/DOM/Node/framework imports (enforced by `domainBoundaries.test.ts`)
 - **File-Size Hard Ceilings Compliance:**
-  - UI Components: All $\le 183$ lines (Hard cap: 200 lines; `Scenario3DLab.tsx` refactored from 765L into 8 subcomponents $\le 164$ lines)
-  - Pure Domain / Utils: All $\le 255$ lines (Hard cap: 300 lines; `nasaSvsColorRamp.ts` at 108L)
-  - Server Modules / Services: All $\le 65$ lines (Hard cap: 300 lines)
-  - Controllers / Route Handlers: All $\le 45$ lines (Hard cap: 120 lines)
-  - Schemas / Validation: All $\le 25$ lines (Hard cap: 200 lines)
-  - Test Suites: All $\le 272$ lines (Hard cap: 500 lines)
+  - UI Components: All $\le 199$ lines (`LunarGlobe3D.tsx` at 199L, `SpatialWorkspace.tsx` at 198L, `CustomTargetStudioModal.tsx` at 194L, `CustomTargetCompareCard.tsx` at 119L)
+  - Pure Domain / Utils: All $\le 210$ lines (`customTargetModel.ts` at 210L, `targetComparison.ts` at 136L, `customTargetStorage.ts` at 113L)
+  - Server Modules / Services: All $\le 65$ lines
+  - Controllers / Route Handlers: All $\le 45$ lines
+  - Schemas / Validation: All $\le 25$ lines
+  - Test Suites: All $\le 272$ lines
 
 ---
 
 ## 3. Active Work Log
+
+### Phase 8: Custom Landing Target Studio (COMPLETED)
+- [x] Implemented pure domain module `src/domain/target/customTargetModel.ts` and `src/domain/target/targetComparison.ts` with coordinate bounds validation, LOLA DEM elevation resolution, nearest catalog matching, and multi-domain comparative delta scoring.
+- [x] Implemented decoupled key-value storage engine `src/domain/target/customTargetStorage.ts` with defensive JSON parsing and localStorage persistence.
+- [x] Implemented 3D Cartesian-to-Selenographic coordinate inversion `vector3ToLatLon` and raycasting in `src/features/spatial/globe/scene/globePinpoint.ts`.
+- [x] Implemented interactive 3D landing beacon marker with gold reticle, stalk pin, emissive diamond, and floating billboard badge.
+- [x] Built `CustomTargetStudioModal.tsx` (194L) with coordinate inputs, real-time LOLA elevation lookup, and South Pole presets.
+- [x] Built `CustomTargetCompareCard.tsx` (119L) with feasibility score/grade and side-by-side delta metrics ($\Delta\text{Sun}$, $\Delta\text{Earth}$, $\Delta\text{Slope}$, $\Delta\text{Ice}$) against the nearest Artemis site.
+- [x] Synchronized OpenSpec capability spec `custom-target-studio` and archived change `2026-10-26-custom-landing-target-studio`.
+- [x] Verified full browser visual rendering via `agent-browser`:
+  - `custom-target-studio-modal.png`: Custom Landing Target Studio modal with presets and LOLA elevation.
+  - `custom-target-active-compare.png`: Active custom target compare card docked in the spatial workspace.
+  - `custom-target-3d-beacon.png`: 3D amber beacon marker and nomenclature billboard rendered on the lunar globe.
+- [x] 328 tests pass with 0 errors across 64 test files.
 
 ### Phase 7: NASA SVS Flight-Grade Planetary Visualizer (COMPLETED)
 - [x] Implemented NASA SVS 3727 16-stop LOLA hypsometry color ramp (`nasaSvsColorRamp.ts`) and docked elevation legend (`NasaSvsElevationLegend.tsx`).

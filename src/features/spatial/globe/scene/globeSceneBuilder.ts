@@ -22,6 +22,13 @@ import {
 } from '@/features/spatial/globe/interaction/lunarRoverController';
 import { CANDIDATE_SITES } from '@/domain/sites/catalog';
 import { CameraPreset, ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
+import { CustomLandingTarget } from '@/domain/target/customTargetModel';
+import {
+  createCustomTargetBeacon,
+  updateCustomTargetBeacon,
+  raycastMoonSurface,
+  MoonSurfaceRaycastHit,
+} from './globePinpoint';
 
 /** Used if the container has not laid out yet; the ResizeObserver corrects it immediately. */
 const FALLBACK_CONTAINER_WIDTH = 500;
@@ -64,6 +71,8 @@ export interface GlobeSceneHandle {
   isFlyoverActive?: () => boolean;
   setRoverActive?: (active: boolean) => void;
   isRoverActive?: () => boolean;
+  setCustomTarget?: (target: CustomLandingTarget | null) => void;
+  raycastMoonSurface?: (clientX: number, clientY: number) => MoonSurfaceRaycastHit | null;
   getDiagnostics?: () => GlobeDiagnosticsMetrics;
   dispose: () => void;
 }
@@ -404,6 +413,8 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
   });
   resizeObserver.observe(container);
 
+  let customBeacon: THREE.Group | null = null;
+
   return {
     globe,
     surfaceMesh: surface.mesh,
@@ -412,6 +423,29 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
     vectorsGroup,
     markers,
     transitioner,
+    setCustomTarget: (target: CustomLandingTarget | null) => {
+      if (!target) {
+        if (customBeacon) customBeacon.visible = false;
+        return;
+      }
+      if (!customBeacon) {
+        customBeacon = createCustomTargetBeacon(target);
+        globe.scene.add(customBeacon);
+      } else {
+        updateCustomTargetBeacon(customBeacon, target);
+      }
+    },
+    raycastMoonSurface: (clientX: number, clientY: number) => {
+      const rect = container.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
+      const mouse = new THREE.Vector2(
+        ((clientX - rect.left) / rect.width) * 2 - 1,
+        -((clientY - rect.top) / rect.height) * 2 + 1,
+      );
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, globe.camera);
+      return raycastMoonSurface(raycaster, surface.mesh);
+    },
     setSelectedSiteId: (id: string) => {
       currentSelectedSiteId = id;
       polarTerrain.updateSelectedSite(id);
@@ -499,6 +533,10 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
       surface.dispose();
       polarTerrain.dispose();
       laserTracks.dispose();
+      if (customBeacon) {
+        globe.scene.remove(customBeacon);
+        customBeacon = null;
+      }
     },
   };
 }

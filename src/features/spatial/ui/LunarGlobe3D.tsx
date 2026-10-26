@@ -9,6 +9,7 @@ import {
   TopocentricElevationDeg,
 } from '@/domain/coordinates/frames';
 import { RoverTelemetry } from '@/features/spatial/globe/interaction/lunarRoverController';
+import { CustomLandingTarget } from '@/domain/target/customTargetModel';
 import {
   GlobeLoadingOverlay,
   GlobeTextureErrorBanner,
@@ -60,6 +61,9 @@ export interface LunarGlobe3DProps {
   isFlyoverActive?: boolean;
   onFlyoverChange?: (active: boolean) => void;
   isRoverActive?: boolean;
+  customTarget?: CustomLandingTarget | null;
+  isPinpointMode?: boolean;
+  onPinpointCustomTarget?: (target: CustomLandingTarget) => void;
 }
 
 /**
@@ -126,6 +130,9 @@ export function LunarGlobe3D(props: LunarGlobe3DProps) {
     isFlyoverActive,
     onFlyoverChange,
     isRoverActive: props.isRoverActive,
+    customTarget: props.customTarget,
+    isPinpointMode: props.isPinpointMode,
+    onPinpointCustomTarget: props.onPinpointCustomTarget,
   });
 
   if (status.kind === 'unsupported') return <GlobeUnavailablePanel />;

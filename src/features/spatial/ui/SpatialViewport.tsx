@@ -7,6 +7,7 @@ import { ViewportPanel } from '@/features/spatial/components/panels/ViewportPane
 import { CameraPreset, ScientificMapLayerMode, SpatialLayer, SpatialPreferences } from '@/features/spatial/model/spatialPreferences';
 import { SpatialViewMode } from '@/features/spatial/model/spatialViewMode';
 import { useScenarioCommands, useScenarioModel } from '@/app/scenario/context/scenarioContext';
+import { CustomLandingTarget } from '@/domain/target/customTargetModel';
 
 export interface SpatialViewportProps {
   viewMode: SpatialViewMode;
@@ -15,6 +16,9 @@ export interface SpatialViewportProps {
   onCameraPresetChange: (preset: CameraPreset) => void;
   onGlobeFallbackTo2D: () => void;
   onSelectScientificMapMode?: (mode: ScientificMapLayerMode) => void;
+  customTarget?: CustomLandingTarget | null;
+  isPinpointMode?: boolean;
+  onPinpointCustomTarget?: (target: CustomLandingTarget) => void;
 }
 
 /**
@@ -29,6 +33,9 @@ export function SpatialViewport({
   onCameraPresetChange,
   onGlobeFallbackTo2D,
   onSelectScientificMapMode,
+  customTarget,
+  isPinpointMode,
+  onPinpointCustomTarget,
 }: SpatialViewportProps) {
   const { selectSite } = useScenarioCommands();
   const { site: selectedSite, conditions, ephemeris, epochIsoUtc } = useScenarioModel();
@@ -70,6 +77,9 @@ export function SpatialViewport({
         cameraPreset={preferences.cameraPreset}
         onCameraPresetChange={onCameraPresetChange}
         epochIsoUtc={epochIsoUtc}
+        customTarget={customTarget}
+        isPinpointMode={isPinpointMode}
+        onPinpointCustomTarget={onPinpointCustomTarget}
         hideHeader
         hideRibbon
       />

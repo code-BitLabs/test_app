@@ -1,10 +1,28 @@
+import React, { useState, useEffect } from 'react';
 import { CANDIDATE_SITES } from '@/domain/sites/catalog';
 import { useScenarioCommands, useScenarioModel } from '@/app/scenario/context/scenarioContext';
+import { loadCustomLandingTargets } from '@/domain/target/customTargetStorage';
+import { CustomLandingTarget } from '@/domain/target/customTargetModel';
+
+export interface CandidateRibbonProps {
+  onSelectCustomTarget?: (target: CustomLandingTarget) => void;
+  selectedCustomTargetId?: string | null;
+}
 
 /** Site picker shared by the standard and fullscreen workspace footers. */
-export function CandidateRibbon() {
+export function CandidateRibbon({
+  onSelectCustomTarget,
+  selectedCustomTargetId,
+}: CandidateRibbonProps) {
   const { site: selectedSite } = useScenarioModel();
   const { selectSite } = useScenarioCommands();
+  const [savedTargets, setSavedTargets] = useState<CustomLandingTarget[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSavedTargets(loadCustomLandingTargets(window.localStorage));
+    }
+  }, []);
 
   return (
     <footer className="pt-2.5 border-t border-[var(--lm-color-border-subtle)] flex items-center gap-2 overflow-x-auto shrink-0 select-none">
@@ -13,7 +31,7 @@ export function CandidateRibbon() {
       </span>
       <div className="flex items-center gap-1.5 shrink-0">
         {CANDIDATE_SITES.map((site) => {
-          const isSelected = site.id === selectedSite.id;
+          const isSelected = !selectedCustomTargetId && site.id === selectedSite.id;
           return (
             <button
               key={site.id}
@@ -27,6 +45,26 @@ export function CandidateRibbon() {
               }`}
             >
               {site.name}
+            </button>
+          );
+        })}
+
+        {savedTargets.map((target) => {
+          const isSelected = selectedCustomTargetId === target.id;
+          return (
+            <button
+              key={target.id}
+              type="button"
+              onClick={() => onSelectCustomTarget?.(target)}
+              aria-pressed={isSelected}
+              className={`px-2.5 py-1 text-xs font-mono-num rounded-[var(--lm-radius-sm)] transition-colors flex items-center gap-1 ${
+                isSelected
+                  ? 'bg-amber-950/80 text-amber-300 border border-amber-400 font-semibold shadow-xs'
+                  : 'bg-amber-950/30 text-amber-200/80 border border-amber-500/30 hover:text-amber-100 hover:bg-amber-900/50'
+              }`}
+            >
+              <span>📍</span>
+              <span>{target.name}</span>
             </button>
           );
         })}

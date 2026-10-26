@@ -13,6 +13,8 @@ import {
 } from '@/features/spatial/globe/scene/globeSceneBuilder';
 import { RoverTelemetry } from '@/features/spatial/globe/interaction/lunarRoverController';
 import { useGlobeSceneSync } from '@/features/spatial/globe/hooks/useGlobeSceneSync';
+import { useGlobePinpointClick } from '@/features/spatial/globe/hooks/useGlobePinpointClick';
+import { CustomLandingTarget } from '@/domain/target/customTargetModel';
 
 /** Color mosaic and DEM relief both settle before the loading overlay lifts. */
 const SURFACE_TEXTURE_COUNT = 2;
@@ -40,6 +42,9 @@ export interface UseGlobeSceneInput {
   onFlyoverChange?: (active: boolean) => void;
   onRoverTelemetryChange?: (telemetry: RoverTelemetry | null) => void;
   isRoverActive?: boolean;
+  customTarget?: CustomLandingTarget | null;
+  isPinpointMode?: boolean;
+  onPinpointCustomTarget?: (target: CustomLandingTarget) => void;
 }
 
 export interface UseGlobeSceneResult {
@@ -198,7 +203,15 @@ export function useGlobeScene(input: UseGlobeSceneInput): UseGlobeSceneResult {
     applyCameraPreset,
     scientificMapMode: input.scientificMapMode,
     isRoverActive: input.isRoverActive,
+    customTarget: input.customTarget,
   });
+
+  useGlobePinpointClick(
+    containerRef,
+    handleRef,
+    input.isPinpointMode,
+    input.onPinpointCustomTarget,
+  );
 
   const getDiagnostics = useCallback(() => {
     return handleRef.current?.getDiagnostics?.() ?? null;

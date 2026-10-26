@@ -281,6 +281,16 @@ gantt
   - OpenSpec change `nasa-svs-lunar-visualizer` (12/12 tasks completed, spec synced to `spatial-visualization`, archived to `openspec/changes/archive/2026-10-26-nasa-svs-lunar-visualizer`).
   - Test suite expanded to 308 green tests across 61 test files.
 
+- [x] **Custom Landing Target Studio (Arbitrary Polar Coordinates & Artemis Benchmarking)**:
+  - Input arbitrary south-polar coordinates with numerical validation and real-time NASA LOLA DEM elevation lookup.
+  - 3D sphere click-to-pin raycasting and Cartesian-to-Selenographic spherical inversion (`vector3ToLatLon`).
+  - Pulsating amber 3D landing beacon marker with gold reticle and floating billboard badge.
+  - Decoupled key-value storage engine (`customTargetStorage.ts`) with defensive JSON parsing and persistence.
+  - Docked `CustomTargetCompareCard.tsx` with feasibility score/grade and comparative deltas ($\Delta\text{Sun}$, $\Delta\text{Earth}$, $\Delta\text{Slope}$, $\Delta\text{Ice}$) against the nearest Artemis candidate.
+  - Integrated into Candidate Ribbon with amber pin tags.
+  - OpenSpec change `custom-landing-target-studio` (8/8 tasks completed, spec synced to `custom-target-studio`, archived to `openspec/changes/archive/2026-10-26-custom-landing-target-studio`).
+  - Test suite expanded to 328 green tests across 64 test files.
+
 ### Ready for Next Steps:
 - Manual testing by the developer / user.
 - Any additional feature or polish as directed.
