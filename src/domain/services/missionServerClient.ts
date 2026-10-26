@@ -6,6 +6,8 @@ import {
   determineActiveDsnStation,
   type FrequencyBandKey,
 } from '@domain/telecom/linkBudget';
+import { calculateTraversalPlan } from '@domain/traversal/traversePlanner';
+import type { TraversalPlan, TraversalPlanRequest } from '@domain/traversal/types';
 import type { CalculationMode } from '@domain/celestial/calculationMode';
 
 export interface MissionServerClientConfig {
@@ -142,6 +144,31 @@ export class MissionServerClient {
       },
       source: 'local_analytical_fallback' as const,
     };
+  }
+
+  async getTraversalPlan(input: TraversalPlanRequest): Promise<TraversalPlan & { source: 'nextrush_server' | 'local_analytical_fallback' }> {
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), this.config.timeoutMs);
+      const res = await fetch(`${this.config.baseUrl}/traversal/plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+        signal: controller.signal,
+      });
+      clearTimeout(id);
+      if (res.ok) {
+        const body = await res.json();
+        if (body.data) {
+          return { ...body.data, source: 'nextrush_server' as const };
+        }
+      }
+    } catch {
+      // Backend offline; fallback to local analytical calculation
+    }
+
+    const plan = calculateTraversalPlan(input);
+    return { ...plan, source: 'local_analytical_fallback' as const };
   }
 }
 

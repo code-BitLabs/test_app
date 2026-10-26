@@ -229,9 +229,26 @@ gantt
 
 ---
 
-## 7. Immediate Next Actions
+## 7. Execution Status & Immediate Next Actions
 
-To kick off Phase 1 immediately:
-1. **Develop the NASA Deep Space Network (DSN) & RF Link Budget Module** (`src/domain/telecom/linkBudget.ts`).
-2. **Build the DSN Ground Station Tracker Component** (visualizing Goldstone, Madrid, and Canberra handoffs).
-3. **Write Unit Tests First (TDD)** for link budget path loss, antenna pointing vectors, and link margin calculations.
+### Completed Milestones:
+- [x] **NextRush Backend Microservice (`server/`)**: Bun workspaces, Zod schema validation, CORS, request timing, port `:3001` with daemon runner.
+- [x] **NASA DSN & RF Link Budget Engine (`src/domain/telecom/`)**: Physical FSPL calculations, link margin (dB), Goldstone/Madrid/Canberra topocentric tracking, multipath warnings.
+- [x] **Topocentric Horizon Radar Refactor (`src/features/horizon/`)**: Deconstructed into subcomponents meeting the $\le 200$ line cap.
+- [x] **Surface Rover Traversal & EVA Route Planner (`src/domain/traversal/`, `server/src/routes/traversalRoutes.ts`, `src/features/traversal/`)**:
+  - Continuous LOLA elevation transect from Artemis landing plateaus into crater floor PSRs.
+  - VIPER/Apollo regolith rolling resistance and climb power modeling.
+  - Line-of-sight communication tracking between rover transceiver and lander mast.
+  - Interactive `/traverse` console with waypoint inspector and telemetry HUD.
+  - Live NextRush backend endpoint `POST /api/traversal/plan` with resilient client fallback.
+  - 267 green tests across 52 test files.
+
+### Immediate Next Actions (Phase 3):
+1. **Volatile Water-Ice Prospecting & Multi-Spectral Overlays**:
+   - Implement spatial layers for LRO LEND epithermal neutron suppression flux (hydrogen wt%).
+   - LRO Diviner cryogenic isotherms ($<110\text{ K}$ permanent cold traps vs $>200\text{ K}$ illuminated zones).
+   - In-Situ Resource Utilization (ISRU) yield calculator ($kg\text{ H}_2\text{O}/m^3\text{ regolith}$).
+2. **Pareto-Optimal Landing Window Solver (Phase 4)**:
+   - Multi-year automated solver sweeping 2026–2028 landing dates to score and rank optimal launch windows based on continuous solar power and DTE clearance.
+3. **Astronaut Helmet HUD Surface EVA Mode (Phase 5)**:
+   - First-person ground perspective with solar glare post-processing and helmet visor telemetry.

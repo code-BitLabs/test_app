@@ -97,6 +97,52 @@ test('NextRush Server: POST /api/telecom/link-budget rejects invalid payload wit
   assert.equal(data.error, 'Validation Error');
 });
 
+test('NextRush Server: POST /api/traversal/plan computes valid EVA route and slope classification', async () => {
+  const payload = {
+    originLatDeg: -89.68,
+    originLonDeg: 125.0,
+    destinationLatDeg: -89.92,
+    destinationLonDeg: 110.0,
+    maxWaypoints: 20,
+  };
+
+  const req = new Request('http://localhost:3001/api/traversal/plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const res = await handler(req);
+  assert.equal(res.status, 200);
+
+  const body = await res.json();
+  assert.equal(body.success, true);
+  assert.ok(body.data !== undefined);
+  assert.ok(body.data.totalDistanceKm > 0);
+  assert.ok(body.data.waypoints.length > 5);
+  assert.ok(body.data.batteryMarginPct >= 0);
+});
+
+test('NextRush Server: POST /api/traversal/plan rejects invalid latitude coordinates with 400', async () => {
+  const req = new Request('http://localhost:3001/api/traversal/plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      originLatDeg: 45.0, // Invalid: not lunar south pole (-90 to -70)
+      originLonDeg: 0,
+      destinationLatDeg: -89.5,
+      destinationLonDeg: 0,
+    }),
+  });
+
+  const res = await handler(req);
+  assert.equal(res.status, 400);
+
+  const data = await res.json();
+  assert.equal(data.error, 'Invalid traversal request payload');
+  assert.ok(Array.isArray(data.issues));
+});
+
 test('NextRush Server: handles 404 for unknown endpoints gracefully', async () => {
   const req = new Request('http://localhost:3001/api/unknown-endpoint', { method: 'GET' });
   const res = await handler(req);

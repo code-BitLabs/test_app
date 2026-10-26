@@ -7,6 +7,7 @@ import { requestLogger } from '@server/middleware/requestLogger';
 import { createHealthRouter } from '@server/routes/healthRoutes';
 import { createEphemerisRouter } from '@server/routes/ephemerisRoutes';
 import { createTelecomRouter } from '@server/routes/telecomRoutes';
+import { traversalRouter } from '@server/routes/traversalRoutes';
 
 export function createServerApp() {
   const app = createApp();
@@ -31,6 +32,7 @@ export function createServerApp() {
   apiRouter.mount('', healthRouter);
   apiRouter.mount('/ephemeris', ephemerisRouter);
   apiRouter.mount('/telecom', telecomRouter);
+  apiRouter.mount('/traversal', traversalRouter);
 
   app.route('/api', apiRouter);
 

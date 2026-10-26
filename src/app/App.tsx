@@ -5,6 +5,7 @@ import { SpatialWorkspace } from '@/features/spatial/ui/SpatialWorkspace';
 import { TimeExplorer } from '@/features/time/ui/TimeExplorer';
 import { ComparisonMatrix } from '@/features/comparison/ui/ComparisonMatrix';
 import { TopocentricHorizonView } from '@/features/horizon/ui/TopocentricHorizonView';
+import { RoverTraverseView } from '@/features/traversal/ui/RoverTraverseView';
 import { MethodAndDataView } from '@/features/methodology/ui/MethodAndDataView';
 import { CandidateSite } from '@/domain/sites/candidateSite';
 import { useScenarioCommands, useScenarioModel } from '@/app/scenario/context/scenarioContext';
@@ -76,6 +77,12 @@ export default function App() {
         {activeTab === 'horizon' && (
           <section className="w-full min-w-0" aria-label="Topocentric Horizon Radar and Sky Dome">
             <TopocentricHorizonView />
+          </section>
+        )}
+
+        {activeTab === 'traverse' && (
+          <section className="w-full min-w-0" aria-label="Surface Rover Traversal and EVA Route Planner">
+            <RoverTraverseView />
           </section>
         )}
 

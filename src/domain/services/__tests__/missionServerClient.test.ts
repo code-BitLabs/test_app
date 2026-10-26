@@ -32,3 +32,20 @@ test('Mission Server Client: computes link budget via fallback when backend is u
   assert.ok(budget.linkBudget.linkMarginDb > 0);
   assert.ok(budget.dsnTracking.stations.length === 3);
 });
+
+test('Mission Server Client: computes traversal plan via fallback when backend is unreachable', async () => {
+  const client = missionServerClient.withBaseUrl('http://127.0.0.1:59999/api');
+
+  const plan = await client.getTraversalPlan({
+    originLatDeg: -89.68,
+    originLonDeg: 125.0,
+    destinationLatDeg: -89.92,
+    destinationLonDeg: 110.0,
+    maxWaypoints: 15,
+  });
+
+  assert.equal(plan.source, 'local_analytical_fallback');
+  assert.ok(plan.waypoints.length > 5);
+  assert.ok(plan.totalDistanceKm > 0);
+  assert.ok(plan.batteryMarginPct >= 0);
+});

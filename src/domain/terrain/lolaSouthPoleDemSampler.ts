@@ -24,101 +24,13 @@ export interface TerrainElevationSample {
   annualIlluminationPct: number;
 }
 
-export interface CraterMorphologyDatum {
-  id: string;
-  name: string;
-  centerLatDeg: number;
-  centerLonDeg: number;
-  diameterKm: number;
-  rimElevationMeters: number;
-  floorElevationMeters: number;
-  innerWallSlopeDeg: number;
-  hasCentralPeak?: boolean;
-  centralPeakHeightMeters?: number;
-  isDeepPsr: boolean;
-}
+import {
+  CraterMorphologyDatum,
+  LOLA_POLAR_CRATER_MORPHOLOGIES,
+} from './craterMorphologyData';
 
-export const LOLA_POLAR_CRATER_MORPHOLOGIES: CraterMorphologyDatum[] = [
-  {
-    id: 'shackleton',
-    name: 'Shackleton',
-    centerLatDeg: -89.68,
-    centerLonDeg: 125.0,
-    diameterKm: 21.0,
-    rimElevationMeters: 4250,
-    floorElevationMeters: -4200,
-    innerWallSlopeDeg: 32.5,
-    isDeepPsr: true,
-  },
-  {
-    id: 'de-gerlache',
-    name: 'de Gerlache',
-    centerLatDeg: -88.48,
-    centerLonDeg: 271.4,
-    diameterKm: 32.4,
-    rimElevationMeters: 3610,
-    floorElevationMeters: -1800,
-    innerWallSlopeDeg: 26.0,
-    isDeepPsr: true,
-  },
-  {
-    id: 'shoemaker',
-    name: 'Shoemaker',
-    centerLatDeg: -88.14,
-    centerLonDeg: 44.9,
-    diameterKm: 50.9,
-    rimElevationMeters: 3200,
-    floorElevationMeters: -2800,
-    innerWallSlopeDeg: 24.0,
-    isDeepPsr: true,
-  },
-  {
-    id: 'faustini',
-    name: 'Faustini',
-    centerLatDeg: -87.18,
-    centerLonDeg: 77.0,
-    diameterKm: 39.0,
-    rimElevationMeters: 3100,
-    floorElevationMeters: -2100,
-    innerWallSlopeDeg: 22.0,
-    isDeepPsr: true,
-  },
-  {
-    id: 'haworth',
-    name: 'Haworth',
-    centerLatDeg: -87.40,
-    centerLonDeg: 354.5,
-    diameterKm: 51.4,
-    rimElevationMeters: 3420,
-    floorElevationMeters: -1600,
-    innerWallSlopeDeg: 25.0,
-    isDeepPsr: true,
-  },
-  {
-    id: 'nobile',
-    name: 'Nobile',
-    centerLatDeg: -85.25,
-    centerLonDeg: 37.8,
-    diameterKm: 73.0,
-    rimElevationMeters: 2980,
-    floorElevationMeters: 1200,
-    innerWallSlopeDeg: 15.0,
-    isDeepPsr: true,
-  },
-  {
-    id: 'amundsen',
-    name: 'Amundsen',
-    centerLatDeg: -84.45,
-    centerLonDeg: 85.6,
-    diameterKm: 105.0,
-    rimElevationMeters: 2850,
-    floorElevationMeters: -2100,
-    innerWallSlopeDeg: 23.0,
-    hasCentralPeak: true,
-    centralPeakHeightMeters: 1800,
-    isDeepPsr: true,
-  },
-];
+export type { CraterMorphologyDatum };
+export { LOLA_POLAR_CRATER_MORPHOLOGIES };
 
 export const MOON_SCENE_RADIUS = 1.45;
 export const KM_TO_SCENE_UNITS = MOON_SCENE_RADIUS / LUNAR_MEAN_RADIUS_KM;
@@ -331,159 +243,13 @@ export function sampleLolaTerrain(
 
 export const sampleTerrainAtLatLon = sampleLolaTerrain;
 
-/**
- * Maps an elevation in meters to standard NASA LOLA False Color Rainbow colormap.
- * Range: -4200m (deep purple) to +5100m (bright white/pink).
- */
-export function getLolaElevationColor(elevationMeters: number): string {
-  // Clamped in [-4200, +5100]
-  const minElev = -4200;
-  const maxElev = 5100;
-  const t = Math.max(0, Math.min(1, (elevationMeters - minElev) / (maxElev - minElev)));
+export {
+  getLolaElevationColor,
+  getSlopeColor,
+  getGeologyUnitColor,
+  getLolaElevationRgb,
+  getSlopeRgb,
+  getGeologyUnitRgb,
+  getIlluminationRgb,
+} from './terrainColorMaps';
 
-  // 6-stop authentic NASA LOLA Rainbow/Spectral color ramp:
-  // 0.00: Deep Purple (#3b0764)
-  // 0.20: Deep Blue (#1d4ed8)
-  // 0.40: Cyan / Teal (#06b6d4)
-  // 0.60: Green (#10b981)
-  // 0.80: Yellow / Gold (#eab308)
-  // 0.92: Orange / Red (#ea580c)
-  // 1.00: White / Light Pink (#fdf4ff)
-  if (t < 0.20) {
-    const s = t / 0.20;
-    return interpolateRgb('#3b0764', '#1d4ed8', s);
-  } else if (t < 0.40) {
-    const s = (t - 0.20) / 0.20;
-    return interpolateRgb('#1d4ed8', '#06b6d4', s);
-  } else if (t < 0.60) {
-    const s = (t - 0.40) / 0.20;
-    return interpolateRgb('#06b6d4', '#10b981', s);
-  } else if (t < 0.80) {
-    const s = (t - 0.60) / 0.20;
-    return interpolateRgb('#10b981', '#eab308', s);
-  } else if (t < 0.92) {
-    const s = (t - 0.80) / 0.12;
-    return interpolateRgb('#eab308', '#ea580c', s);
-  } else {
-    const s = (t - 0.92) / 0.08;
-    return interpolateRgb('#ea580c', '#fdf4ff', s);
-  }
-}
-
-/**
- * Maps slope angle in degrees to standard lunar hazard colormap.
- */
-export function getSlopeColor(slopeDeg: number): string {
-  if (slopeDeg < 5.0) return '#10b981'; // Green: Safe (<5°)
-  if (slopeDeg < 12.0) return '#84cc16'; // Lime: Moderate (5°-12°)
-  if (slopeDeg < 18.0) return '#f59e0b'; // Amber: Caution (12°-18°)
-  if (slopeDeg < 25.0) return '#ea580c'; // Orange: Steep (18°-25°)
-  return '#dc2626'; // Red: Hazard (>25°)
-}
-
-/**
- * Maps geological unit code to authentic lunar stratigraphy color.
- */
-export function getGeologyUnitColor(unitCode: 'pNb' | 'Nb' | 'Im' | 'Cc' | 'PSR'): string {
-  switch (unitCode) {
-    case 'PSR':
-      return '#1e1b4b'; // Deep navy/black
-    case 'pNb':
-      return '#78716c'; // Muted warm stone / pre-Nectarian
-    case 'Nb':
-      return '#b45309'; // Terracotta / Nectarian massif
-    case 'Im':
-      return '#2563eb'; // Royal blue / Imbrian
-    case 'Cc':
-      return '#fbbf24'; // Gold / Copernican
-  }
-}
-
-export function getLolaElevationRgb(elevationMeters: number): [number, number, number] {
-  const minElev = -4200;
-  const maxElev = 5100;
-  const t = Math.max(0, Math.min(1, (elevationMeters - minElev) / (maxElev - minElev)));
-
-  // Colors:
-  // #3b0764 = [59, 7, 100]
-  // #1d4ed8 = [29, 78, 216]
-  // #06b6d4 = [6, 182, 212]
-  // #10b981 = [16, 185, 129]
-  // #eab308 = [234, 179, 8]
-  // #ea580c = [234, 88, 12]
-  // #fdf4ff = [253, 244, 255]
-  if (t < 0.20) {
-    const s = t / 0.20;
-    return [Math.round(59 + (29 - 59) * s), Math.round(7 + (78 - 7) * s), Math.round(100 + (216 - 100) * s)];
-  } else if (t < 0.40) {
-    const s = (t - 0.20) / 0.20;
-    return [Math.round(29 + (6 - 29) * s), Math.round(78 + (182 - 78) * s), Math.round(216 + (212 - 216) * s)];
-  } else if (t < 0.60) {
-    const s = (t - 0.40) / 0.20;
-    return [Math.round(6 + (16 - 6) * s), Math.round(182 + (185 - 182) * s), Math.round(212 + (129 - 212) * s)];
-  } else if (t < 0.80) {
-    const s = (t - 0.60) / 0.20;
-    return [Math.round(16 + (234 - 16) * s), Math.round(185 + (179 - 185) * s), Math.round(129 + (8 - 129) * s)];
-  } else if (t < 0.92) {
-    const s = (t - 0.80) / 0.12;
-    return [Math.round(234 + (234 - 234) * s), Math.round(179 + (88 - 179) * s), Math.round(8 + (12 - 8) * s)];
-  } else {
-    const s = (t - 0.92) / 0.08;
-    return [Math.round(234 + (253 - 234) * s), Math.round(88 + (244 - 88) * s), Math.round(12 + (255 - 12) * s)];
-  }
-}
-
-export function getSlopeRgb(slopeDeg: number): [number, number, number] {
-  if (slopeDeg < 5.0) return [16, 185, 129]; // Safe Green (<5°)
-  if (slopeDeg < 12.0) return [132, 204, 22]; // Lime Moderate (5°-12°)
-  if (slopeDeg < 18.0) return [245, 158, 11]; // Amber Caution (12°-18°)
-  if (slopeDeg < 25.0) return [234, 88, 12]; // Orange Steep (18°-25°)
-  return [220, 38, 38]; // Red Hazard (>25°)
-}
-
-export function getGeologyUnitRgb(unitCode: 'pNb' | 'Nb' | 'Im' | 'Cc' | 'PSR'): [number, number, number] {
-  switch (unitCode) {
-    case 'PSR':
-      return [30, 27, 75];
-    case 'pNb':
-      return [120, 113, 108];
-    case 'Nb':
-      return [180, 83, 9];
-    case 'Im':
-      return [37, 99, 235];
-    case 'Cc':
-      return [251, 191, 36];
-  }
-}
-
-export function getIlluminationRgb(annualPct: number, isPsr: boolean): [number, number, number] {
-  if (isPsr) {
-    return [20, 14, 60]; // Deep indigo cryogenic shadow
-  }
-  const t = Math.max(0, Math.min(1, annualPct / 100));
-  // 0% -> dark navy [15, 23, 42], 100% -> brilliant gold [245, 158, 11]
-  return [
-    Math.round(15 + (245 - 15) * t),
-    Math.round(23 + (158 - 23) * t),
-    Math.round(42 + (11 - 42) * t),
-  ];
-}
-
-function interpolateRgb(hexA: string, hexB: string, t: number): string {
-  const cA = parseInt(hexA.replace('#', ''), 16);
-  const cB = parseInt(hexB.replace('#', ''), 16);
-
-  const rA = (cA >> 16) & 255;
-  const gA = (cA >> 8) & 255;
-  const bA = cA & 255;
-
-  const rB = (cB >> 16) & 255;
-  const gB = (cB >> 8) & 255;
-  const bB = cB & 255;
-
-  const r = Math.round(rA + (rB - rA) * t);
-  const g = Math.round(gA + (gB - gA) * t);
-  const b = Math.round(bA + (bB - bA) * t);
-
-  return `rgb(${r}, ${g}, ${b})`;
-}
