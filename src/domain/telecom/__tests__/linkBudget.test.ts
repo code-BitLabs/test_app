@@ -85,3 +85,35 @@ test('DSN Complex Tracking: evaluates visibility and handovers across Earth rota
   assert.ok(['goldstone', 'madrid', 'canberra'].includes(active.stationId));
   assert.ok(active.elevationDeg >= 10.0, 'Active DSN dish must be above 10 deg mask');
 });
+
+test('RF Link Budget: calculates S-band low-data-rate emergency telemetry link margin', () => {
+  const budget = calculateRfLinkBudget({
+    earthDistanceKm: 384400,
+    earthElevationDeg: 8.0,
+    isTerrainObstructed: false,
+    band: 'sBandDownlink',
+    transmitterPowerWatts: 5, // 5W emergency omni/medium-gain
+    dataRateMbps: 0.05, // 50 kbps critical voice/telemetry
+  });
+
+  assert.equal(budget.linkState, 'locked');
+  assert.ok(budget.linkMarginDb > 6.0, 'Low bit rate provides generous link margin');
+});
+
+test('DSN Complex Tracking: hands over ground station as Earth rotates 12 hours later', () => {
+  const epochA = Date.UTC(2026, 9, 26, 6, 0, 0); // 06:00 UTC
+  const epochB = Date.UTC(2026, 9, 26, 18, 0, 0); // 18:00 UTC (12 hours later)
+  const moonSubEarthLon = 0.0;
+  const moonSubEarthLat = -1.5;
+
+  const visA = calculateDsnStationVisibilities(epochA, moonSubEarthLon, moonSubEarthLat);
+  const visB = calculateDsnStationVisibilities(epochB, moonSubEarthLon, moonSubEarthLat);
+
+  const activeA = determineActiveDsnStation(visA);
+  const activeB = determineActiveDsnStation(visB);
+
+  assert.ok(activeA !== null);
+  assert.ok(activeB !== null);
+  // In a 12 hour span, Earth rotates 180 degrees, switching the primary DSN station
+  assert.notEqual(activeA.stationId, activeB.stationId);
+});

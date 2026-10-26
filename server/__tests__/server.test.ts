@@ -220,6 +220,50 @@ test('NextRush Server: POST /api/windows/optimize rejects missing fields with 40
   assert.equal(data.error, 'Invalid landing window optimization payload');
 });
 
+test('NextRush Server: POST /api/telecom/link-budget evaluates Ka-band 26 GHz RF path loss', async () => {
+  const req = new Request('http://localhost:3001/api/telecom/link-budget', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      siteId: 'connecting-ridge',
+      epochMs: 1793016000000,
+      band: 'kaBandDownlink',
+      transmitterPowerWatts: 50,
+    }),
+  });
+
+  const res = await handler(req);
+  assert.equal(res.status, 200);
+
+  const data = await res.json();
+  assert.ok(data.linkBudget !== undefined);
+  assert.equal(data.linkBudget.frequencyGhz, 32.0);
+  assert.ok(data.linkBudget.fsplDb > 220); // Ka-band produces >220 dB FSPL
+});
+
+test('NextRush Server: POST /api/windows/optimize handles custom thresholds and limits topN', async () => {
+  const req = new Request('http://localhost:3001/api/windows/optimize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      siteId: 'connecting-ridge',
+      startEpochMs: Date.UTC(2026, 9, 1),
+      endEpochMs: Date.UTC(2026, 11, 31),
+      stayDurationDays: 7,
+      minSunlightPct: 20,
+      maxContinuousShadowHours: 200,
+      topN: 2,
+    }),
+  });
+
+  const res = await handler(req);
+  assert.equal(res.status, 200);
+
+  const body = await res.json();
+  assert.equal(body.success, true);
+  assert.ok(body.data.topWindows.length <= 2);
+});
+
 test('NextRush Server: handles 404 for unknown endpoints gracefully', async () => {
   const req = new Request('http://localhost:3001/api/unknown-endpoint', { method: 'GET' });
   const res = await handler(req);

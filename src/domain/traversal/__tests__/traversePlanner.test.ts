@@ -75,3 +75,39 @@ test('Rover Traversal: correctly models Mons Mouton to Shoemaker crater rim trav
   assert.ok(plan.totalEnergyWh > 50);
   assert.ok(plan.batteryMarginPct >= 0);
 });
+
+test('Rover Traversal: calculates Connecting Ridge to de Gerlache traverse with high direct LOS', () => {
+  const connectingRidgePreset = PRESET_LUNAR_TRAVERSES.find((p) => p.id === 'connecting-ridge-to-degerlache');
+  assert.ok(connectingRidgePreset !== undefined);
+
+  const plan = calculateTraversalPlan({
+    originLatDeg: connectingRidgePreset!.originLatDeg,
+    originLonDeg: connectingRidgePreset!.originLonDeg,
+    destinationLatDeg: connectingRidgePreset!.destinationLatDeg,
+    destinationLonDeg: connectingRidgePreset!.destinationLonDeg,
+    rover: defaultRover,
+    maxWaypoints: 20,
+  });
+
+  assert.ok(plan.waypoints.length >= 10);
+  assert.ok(plan.lineOfSightSummary.directDistanceKm > 0);
+  assert.equal(plan.waypoints[0].terrainSafety, 'safe');
+});
+
+test('Rover Traversal: clamps battery margin to zero when energy exceeds total battery capacity', () => {
+  // Ultra-small battery
+  const lowBatteryRover: RoverSpecifications = {
+    ...defaultRover,
+    batteryCapacityWh: 10, // Only 10 Wh
+  };
+
+  const plan = calculateTraversalPlan({
+    originLatDeg: -89.68,
+    originLonDeg: 125.0,
+    destinationLatDeg: -89.85,
+    destinationLonDeg: 120.0,
+    rover: lowBatteryRover,
+  });
+
+  assert.equal(plan.batteryMarginPct, 0);
+});

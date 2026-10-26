@@ -44,3 +44,38 @@ test('Pareto Landing Window Solver: multi-site comparison ranks sites for a spec
     assert.ok(result.topWindows[i].paretoScore >= result.topWindows[i + 1].paretoScore);
   }
 });
+
+test('Pareto Landing Window Solver: applies strict daylight filtering correctly', () => {
+  const result = solveParetoLandingWindows({
+    siteId: 'shackleton-ridge',
+    startEpochMs: Date.UTC(2026, 0, 1),
+    endEpochMs: Date.UTC(2026, 2, 1),
+    stayDurationDays: 14,
+    minSunlightPct: 90, // Strict >90% daylight required
+    maxContinuousShadowHours: 24, // Minimal shadow allowed
+    topN: 5,
+  });
+
+  for (const win of result.topWindows) {
+    assert.ok(win.sunlightPercentage >= 90);
+    assert.ok(win.maxShadowHours <= 24);
+    assert.ok(win.paretoScore >= 70);
+    assert.ok(['optimal', 'acceptable'].includes(win.feasibilityVerdict));
+  }
+});
+
+test('Pareto Landing Window Solver: evaluates 28-day extended lunar day stay', () => {
+  const result = solveParetoLandingWindows({
+    siteId: 'connecting-ridge',
+    startEpochMs: Date.UTC(2026, 9, 1),
+    endEpochMs: Date.UTC(2027, 1, 1),
+    stayDurationDays: 28,
+    topN: 3,
+  });
+
+  assert.ok(result.totalWindowsEvaluated > 0);
+  assert.ok(result.topWindows.length > 0);
+  const win = result.topWindows[0];
+  assert.equal(win.durationDays, 28);
+  assert.ok(win.paretoScore >= 0 && win.paretoScore <= 100);
+});

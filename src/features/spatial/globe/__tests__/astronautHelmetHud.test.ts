@@ -39,3 +39,37 @@ test('Astronaut Helmet HUD: alerts when slope exceeds autonomous safety cutoff (
   assert.equal(telemetry.solarHazardState, 'shadowed');
   assert.equal(telemetry.dteCommsState, 'occluded');
 });
+
+test('Astronaut Helmet HUD: flags multipath interference when Earth is low above rim (0-2 deg)', () => {
+  const telemetry = calculateAstronautHudTelemetry({
+    siteName: 'Mons Mouton Plateau',
+    latDeg: -84.8,
+    lonDeg: 36.2,
+    elevationMeters: 5800,
+    slopeDeg: 12.0, // caution range 10-15°
+    sunElevationDeg: 4.5, // nominal sun >3°
+    earthElevationDeg: 1.2, // multipath warning 0-2°
+    missionElapsedSeconds: 5400,
+  });
+
+  assert.equal(telemetry.dteCommsState, 'multipath_warning');
+  assert.equal(telemetry.solarHazardState, 'nominal_sun');
+  assert.equal(telemetry.terrainHazardState, 'caution');
+});
+
+test('Astronaut Helmet HUD: gracefully clamps depleted oxygen and battery at zero margin', () => {
+  const telemetry = calculateAstronautHudTelemetry({
+    siteName: 'Emergency Depleted Simulation',
+    latDeg: -89.9,
+    lonDeg: 0.0,
+    elevationMeters: 1000,
+    slopeDeg: 5.0,
+    sunElevationDeg: 0.5,
+    earthElevationDeg: 3.0,
+    missionElapsedSeconds: 50000, // >13 hours (exceeds 12h PLSS and 8.5h battery)
+  });
+
+  assert.equal(telemetry.oxygenMarginPct, 0);
+  assert.equal(telemetry.suitBatteryPct, 0);
+  assert.equal(telemetry.evaElapsedFormatted, '13:53:20');
+});
