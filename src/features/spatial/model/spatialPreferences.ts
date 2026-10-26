@@ -11,7 +11,7 @@
 
 export type CameraPreset = 'nadir' | 'oblique' | 'overhead' | 'horizon' | 'site' | 'inspection' | 'global' | 'eva';
 
-export type SpatialLayer = 'grid' | 'shadowRegions' | 'craters' | 'vectors';
+export type SpatialLayer = 'grid' | 'shadowRegions' | 'craters' | 'vectors' | 'laserTracks';
 
 export type ScientificMapLayerMode =
   | 'none'
@@ -28,6 +28,7 @@ export interface SpatialPreferences {
   showShadowRegions: boolean;
   showCraters: boolean;
   showVectors: boolean;
+  showLaserTracks: boolean;
   cameraPreset: CameraPreset;
   scientificMapMode: ScientificMapLayerMode;
 }
@@ -43,12 +44,13 @@ export const DEFAULT_SPATIAL_PREFERENCES: SpatialPreferences = {
   showShadowRegions: true,
   showCraters: true,
   showVectors: true,
+  showLaserTracks: true,
   cameraPreset: 'nadir',
   scientificMapMode: 'topography',
 };
 
 /** The preferences field that backs each layer. */
-export type SpatialLayerKey = 'showGrid' | 'showShadowRegions' | 'showCraters' | 'showVectors';
+export type SpatialLayerKey = 'showGrid' | 'showShadowRegions' | 'showCraters' | 'showVectors' | 'showLaserTracks';
 
 /** Layer name → its field, so a toggle touches exactly one concept. */
 export const LAYER_PREFERENCE_KEYS: Record<SpatialLayer, SpatialLayerKey> = {
@@ -56,6 +58,7 @@ export const LAYER_PREFERENCE_KEYS: Record<SpatialLayer, SpatialLayerKey> = {
   shadowRegions: 'showShadowRegions',
   craters: 'showCraters',
   vectors: 'showVectors',
+  laserTracks: 'showLaserTracks',
 };
 
 export function isLayerVisible(preferences: SpatialPreferences, layer: SpatialLayer): boolean {

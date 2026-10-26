@@ -27,27 +27,45 @@
 | **Phase 4** | **Window Solver Backend Route & UI Modal** (`server/`, `src/features/`) | ✅ Complete | `POST /api/windows/optimize` with Zod validation, `ParetoLandingWindowModal` (181L) |
 | **Phase 5** | **Astronaut Helmet HUD & First-Person Surface Mode** (`src/features/spatial/`) | ✅ Complete | xEMU suit PLSS model, grazing glare alert, scarp danger warning, Three.js HUD (182L) |
 | **Phase 6** | **Automated E2E Verification & Manual Testing Readiness** | ✅ Complete | 289 tests green, live daemons on `:3000` & `:3001`, browser snapshots verified |
+| **Phase 7** | **NASA SVS Flight-Grade Planetary Visualizer** (`src/features/spatial/globe/`) | ✅ Complete | NASA SVS 3727/3760/3633, radial spherical polar cap, Blue Marble Earth, 308 tests green |
 
 ---
 
 ## 2. Test Suite & Architecture Invariants
 
-- **Total Passing Tests:** 289 across 55 test files (`bun test`)
+- **Total Passing Tests:** 308 across 61 test files (`bun test`)
 - **TypeScript Static Errors:** 0 (verified in root and `server/` with `tsc --noEmit`)
-- **Vite Production Bundle:** Built cleanly in 1.15s (`bun run build`)
+- **Vite Production Bundle:** Built cleanly in 3.23s (`bun run build`)
 - **Package Manager Rule:** Strictly `bun` (no npm)
 - **Domain Purity:** `src/domain/` has zero React/DOM/Node/framework imports (enforced by `domainBoundaries.test.ts`)
 - **File-Size Hard Ceilings Compliance:**
-  - UI Components: All $\le 183$ lines (Hard cap: 200 lines; `LunarGlobe3D.tsx` at 183L, `AstronautHelmetHud.tsx` at 182L, `ParetoLandingWindowModal.tsx` at 181L)
-  - Pure Domain / Utils: All $\le 255$ lines (Hard cap: 300 lines; `paretoWindowSolver.ts` at 119L, `astronautHudModel.ts` at 103L)
+  - UI Components: All $\le 183$ lines (Hard cap: 200 lines; `Scenario3DLab.tsx` refactored from 765L into 8 subcomponents $\le 164$ lines)
+  - Pure Domain / Utils: All $\le 255$ lines (Hard cap: 300 lines; `nasaSvsColorRamp.ts` at 108L)
   - Server Modules / Services: All $\le 65$ lines (Hard cap: 300 lines)
-  - Controllers / Route Handlers: All $\le 45$ lines (Hard cap: 120 lines; `windowRoutes.ts` at 34L)
-  - Schemas / Validation: All $\le 25$ lines (Hard cap: 200 lines; `windowSchemas.ts` at 14L)
+  - Controllers / Route Handlers: All $\le 45$ lines (Hard cap: 120 lines)
+  - Schemas / Validation: All $\le 25$ lines (Hard cap: 200 lines)
   - Test Suites: All $\le 272$ lines (Hard cap: 500 lines)
 
 ---
 
 ## 3. Active Work Log
+
+### Phase 7: NASA SVS Flight-Grade Planetary Visualizer (COMPLETED)
+- [x] Implemented NASA SVS 3727 16-stop LOLA hypsometry color ramp (`nasaSvsColorRamp.ts`) and docked elevation legend (`NasaSvsElevationLegend.tsx`).
+- [x] Replaced planar tangent box terrain with radial spherical polar cap geometry (`globeSphericalPolarCap.ts`, `globeMultiLodTerrain.ts`) displacing along true spherical normals from $80^\circ\text{S}$ to $90^\circ\text{S}$, eliminating edge dropoff skirts and seam artifacts.
+- [x] Implemented NASA SVS 3633 LOLA laser altimeter ground tracks (`globeLaserTracks.ts`) with 36 converging orbital passes and hypsometric vertex colors.
+- [x] Integrated NASA SVS 3760 3D site nomenclature billboards in `globePolarTerrain.ts`.
+- [x] Upgraded Earth to photorealistic Blue Marble with additive atmospheric limb glow and sunward day/night terminator in `globeCelestialVectors.ts`.
+- [x] Calibrated high-contrast solar grazing lighting (ambient 0.03, sun 3.2) in `globeScene.ts` for authentic crater umbra shadows.
+- [x] Decomposed legacy 765-line `Scenario3DLab.tsx` into modular components ($\le 164$ lines each): `PlanetaryTheaterHeader`, `PlanetaryTheaterCameraButtons`, `PlanetaryTheaterLayerButtons`, `PlanetaryTheaterToolbar`, `PlanetaryTheaterHuds`, `PlanetaryTheaterSidebar`, and `usePlanetaryTheaterState`.
+- [x] Synchronized OpenSpec capability spec `spatial-visualization` and archived change `2026-10-26-nasa-svs-lunar-visualizer`.
+- [x] Verified full browser visual rendering via `agent-browser`:
+  - `nasa-svs-3d-lab-topo.png`: False-color topography and docked elevation legend.
+  - `nasa-svs-lola-tracks.png`: LOLA laser ground tracks over the South Pole.
+  - `nasa-svs-global-view.png`: Global lunar false color sphere and celestial environment.
+  - `nasa-svs-oblique-polar.png`: 45° oblique view of seamless spherical polar terrain.
+  - `nasa-svs-observatory-3d-globe.png`: 3D Moon Globe integrated inside the main mission observatory.
+- [x] 308 tests pass with 0 errors across 61 test files.
 
 ### Phase 6: Automated End-to-End Verification & Manual Testing (COMPLETED)
 - [x] Started Vite frontend dev server on `http://localhost:3000/` and NextRush microservice on `http://localhost:3001/`.

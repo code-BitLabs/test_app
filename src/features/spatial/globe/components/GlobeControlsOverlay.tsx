@@ -8,9 +8,11 @@ export interface GlobeControlsOverlayProps {
   showGrid: boolean;
   showShadowRegions: boolean;
   showVectors: boolean;
+  showLaserTracks?: boolean;
   onToggleGrid: () => void;
   onToggleShadowRegions: () => void;
   onToggleVectors: () => void;
+  onToggleLaserTracks?: () => void;
 }
 
 const NADIR_BUTTON_BASE =
@@ -45,9 +47,11 @@ export function GlobeControlsOverlay({
   showGrid,
   showShadowRegions,
   showVectors,
+  showLaserTracks = true,
   onToggleGrid,
   onToggleShadowRegions,
   onToggleVectors,
+  onToggleLaserTracks,
 }: GlobeControlsOverlayProps) {
   return (
     <div className="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
@@ -135,6 +139,18 @@ export function GlobeControlsOverlay({
             )}
           >
             Vectors
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleLaserTracks}
+            title="Toggle NASA SVS 3633 LOLA Laser Altimeter Ground Tracks"
+            className={layerButtonClass(
+              'bg-[var(--lm-color-surface-raised)] text-cyan-400 border border-cyan-400/40 font-semibold',
+              showLaserTracks,
+            )}
+          >
+            Tracks
           </button>
 
           <button

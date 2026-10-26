@@ -98,6 +98,20 @@ test('Celestial Vectors: Unknown Earth elevation uses neutral slate link with re
   assert.equal(mat.opacity, 0.35);
 });
 
+test('Celestial Vectors: Earth uses realistic Blue Marble MeshStandardMaterial and additive atmospheric limb glow without obscuring cyan wash', () => {
+  const group = new THREE.Group();
+  renderCelestialVectors(group, baseInput);
+
+  const earthMesh = group.children[4] as THREE.Mesh;
+  const atmosphereMesh = group.children[5] as THREE.Mesh;
+
+  assert.ok(earthMesh.material instanceof THREE.MeshStandardMaterial);
+  assert.ok(atmosphereMesh.material instanceof THREE.MeshStandardMaterial);
+  const atmoMat = atmosphereMesh.material as THREE.MeshStandardMaterial;
+  assert.equal(atmoMat.side, THREE.BackSide);
+  assert.equal(atmoMat.blending, THREE.AdditiveBlending);
+});
+
 test('Celestial Vectors: clearCelestialVectors disposes all geometries, materials, and textures without leaking', () => {
   const group = new THREE.Group();
   renderCelestialVectors(group, baseInput);

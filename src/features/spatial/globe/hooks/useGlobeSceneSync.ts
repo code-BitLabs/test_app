@@ -27,6 +27,7 @@ export interface GlobeSceneSyncInput {
   showTerrain?: boolean;
   showMarkers?: boolean;
   showLabels?: boolean;
+  showLaserTracks?: boolean;
   scientificMapMode?: ScientificMapLayerMode;
   cameraPreset: CameraPreset;
   applyCameraPreset: (preset: CameraPreset, site: CandidateSite) => void;
@@ -121,6 +122,13 @@ export function useGlobeSceneSync(input: GlobeSceneSyncInput): void {
     if (!handle || !input.scientificMapMode) return;
     handle.setScientificMode?.(input.scientificMapMode);
   }, [handleRef, input.scientificMapMode]);
+
+  // NASA SVS 3633 LOLA Laser Altimeter Ground Tracks
+  useEffect(() => {
+    const handle = handleRef.current;
+    if (!handle) return;
+    handle.setLaserTracksVisible?.(input.showLaserTracks ?? true);
+  }, [handleRef, input.showLaserTracks]);
 
   // Camera preset notifications
   useEffect(() => {

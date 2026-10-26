@@ -270,6 +270,17 @@ gantt
   - Test suite expanded to 289 green tests with 0 failures across 55 test files.
   - Frontend running at `http://localhost:3000/` and NextRush microservice running at `http://localhost:3001/`.
 
+- [x] **NASA Scientific Visualization Studio (SVS) Flight-Grade Planetary Visualizer**:
+  - Continuous radial spherical polar cap geometry ($80^\circ\text{S} - 90^\circ\text{S}$) along sphere normals, eliminating planar tangent box & edge dropoff skirts.
+  - NASA SVS 3727 16-stop LOLA false-color hypsometry (-8 km to +8 km) with docked elevation scale bar (`NasaSvsElevationLegend.tsx`).
+  - NASA SVS 3633 LOLA altimeter orbital ground tracks (36 converging passes across the South Pole with elevation vertex color coding).
+  - NASA SVS 3760 3D nomenclature site badges.
+  - Photorealistic Blue Marble Earth with additive limb glow and sunward day/night terminator.
+  - High-contrast directional grazing solar lighting (deep black umbra shadows in crater floors).
+  - Decomposed legacy 765-line `Scenario3DLab.tsx` into 8 modular subcomponents ($\le 164$ lines each).
+  - OpenSpec change `nasa-svs-lunar-visualizer` (12/12 tasks completed, spec synced to `spatial-visualization`, archived to `openspec/changes/archive/2026-10-26-nasa-svs-lunar-visualizer`).
+  - Test suite expanded to 308 green tests across 61 test files.
+
 ### Ready for Next Steps:
 - Manual testing by the developer / user.
-- Final adjustments or specific extensions requested by the user.
+- Any additional feature or polish as directed.

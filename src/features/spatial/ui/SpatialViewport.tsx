@@ -61,10 +61,12 @@ export function SpatialViewport({
         showGrid={preferences.showGrid}
         showShadowRegions={preferences.showShadowRegions}
         showVectors={preferences.showVectors}
+        showLaserTracks={preferences.showLaserTracks}
         scientificMapMode={preferences.scientificMapMode}
         onToggleGrid={() => onToggleLayer('grid')}
         onToggleShadowRegions={() => onToggleLayer('shadowRegions')}
         onToggleVectors={() => onToggleLayer('vectors')}
+        onToggleLaserTracks={() => onToggleLayer('laserTracks')}
         cameraPreset={preferences.cameraPreset}
         onCameraPresetChange={onCameraPresetChange}
         epochIsoUtc={epochIsoUtc}

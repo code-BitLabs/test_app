@@ -17,6 +17,7 @@ import {
 import { GlobeControlsOverlay } from '@/features/spatial/globe/components/GlobeControlsOverlay';
 import { GlobeHoverCard } from '@/features/spatial/globe/components/GlobeHoverCard';
 import { GlobeLegend } from '@/features/spatial/globe/components/GlobeLegend';
+import { NasaSvsElevationLegend } from '@/features/spatial/globe/components/NasaSvsElevationLegend';
 import { GlobeCandidateRibbon } from '@/features/spatial/globe/components/GlobeCandidateRibbon';
 import { GlobeDiagnosticsOverlay } from '@/features/spatial/globe/components/GlobeDiagnosticsOverlay';
 import { AstronautHelmetHud } from '@/features/spatial/globe/components/AstronautHelmetHud';
@@ -36,12 +37,14 @@ export interface LunarGlobe3DProps {
   showGrid: boolean;
   showShadowRegions: boolean;
   showVectors: boolean;
+  showLaserTracks?: boolean;
   showTerrain?: boolean;
   showMarkers?: boolean;
   showLabels?: boolean;
   onToggleGrid: () => void;
   onToggleShadowRegions: () => void;
   onToggleVectors: () => void;
+  onToggleLaserTracks?: () => void;
   /** The globe is embedded in the workspace, which supplies its own toolbar and ribbon. */
   hideHeader?: boolean;
   hideRibbon?: boolean;
@@ -75,6 +78,7 @@ export function LunarGlobe3D(props: LunarGlobe3DProps) {
     showGrid,
     showShadowRegions,
     showVectors,
+    showLaserTracks,
     showTerrain,
     showMarkers,
     showLabels,
@@ -111,6 +115,7 @@ export function LunarGlobe3D(props: LunarGlobe3DProps) {
     showGrid,
     showShadowRegions,
     showVectors,
+    showLaserTracks,
     showTerrain,
     showMarkers,
     showLabels,
@@ -134,9 +139,11 @@ export function LunarGlobe3D(props: LunarGlobe3DProps) {
           showGrid={showGrid}
           showShadowRegions={showShadowRegions}
           showVectors={showVectors}
+          showLaserTracks={props.showLaserTracks}
           onToggleGrid={onToggleGrid}
           onToggleShadowRegions={onToggleShadowRegions}
           onToggleVectors={onToggleVectors}
+          onToggleLaserTracks={props.onToggleLaserTracks}
         />
       )}
 
@@ -161,6 +168,8 @@ export function LunarGlobe3D(props: LunarGlobe3DProps) {
       {hoveredSite && <GlobeHoverCard site={hoveredSite} />}
 
       {!hideLegend && <GlobeLegend earthElevationDisplay={earthElevationDisplay} isCompact={hideRibbon} />}
+
+      <NasaSvsElevationLegend isVisible={props.scientificMapMode === 'topography'} />
 
       <GlobeDiagnosticsOverlay
         getDiagnostics={getDiagnostics}

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { MOON_SCENE_RADIUS, latLonToVector3 } from '@/features/spatial/globe/scene/globeScene';
 import { CRATERS } from '@/features/spatial/map/layers/CraterLayer';
 import { CANDIDATE_SITES } from '@/domain/sites/catalog';
+import { createSiteBadge } from '@/features/spatial/globe/scene/globeSiteMarkers';
 
 import { createMultiLodTerrainMesh, MultiLodTerrainMesh, TerrainDiagnostics } from '@/features/spatial/globe/terrain/globeMultiLodTerrain';
 import { ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
@@ -74,6 +75,14 @@ export function createPolarTerrainFeatures(initialSelectedSiteId: string): Polar
     });
     materials.push(rimMat);
     craterOutlinesGroup.add(new THREE.Line(rimGeo, rimMat));
+
+    // NASA SVS 3760 3D Floating Nomenclature Billboard for major craters
+    if (crater.isMajor || crater.diameterKm >= 35) {
+      const billboard = createSiteBadge(crater.name, false);
+      const billboardPos = center.clone().add(normal.clone().multiplyScalar(0.018));
+      billboard.position.copy(billboardPos);
+      craterOutlinesGroup.add(billboard);
+    }
   });
 
   // 2. Malapert Massif Elevation Landmark (+5.1 km crest)

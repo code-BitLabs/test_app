@@ -12,6 +12,7 @@ test('spatialPreferences: defaults match the opening workspace', () => {
     showShadowRegions: true,
     showCraters: true,
     showVectors: true,
+    showLaserTracks: true,
     cameraPreset: 'nadir',
     scientificMapMode: 'topography',
   });
@@ -23,8 +24,13 @@ test('spatialPreferences: each layer toggles independently', () => {
   assert.equal(gridOff.showShadowRegions, true);
   assert.equal(gridOff.showCraters, true);
   assert.equal(gridOff.showVectors, true);
+  assert.equal(gridOff.showLaserTracks, true);
 
-  const shadowsOff = spatialPreferencesReducer(gridOff, { type: 'layer/toggled', layer: 'shadowRegions' });
+  const laserOff = spatialPreferencesReducer(gridOff, { type: 'layer/toggled', layer: 'laserTracks' });
+  assert.equal(laserOff.showLaserTracks, false);
+  assert.equal(laserOff.showGrid, false);
+
+  const shadowsOff = spatialPreferencesReducer(laserOff, { type: 'layer/toggled', layer: 'shadowRegions' });
   assert.equal(shadowsOff.showShadowRegions, false);
   assert.equal(shadowsOff.showGrid, false);
 

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { MOON_SCENE_RADIUS } from '@/features/spatial/globe/scene/globeScene';
+import { getNasaSvsElevationNormalizedRgb } from '@/domain/terrain/nasaSvsColorRamp';
+import { ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 
 const LROC_COLOR_TEXTURE_URL = '/assets/lunar/lroc_color_2k.jpg';
 const LROC_POLAR_FALLBACK_TEXTURE_URL = '/assets/lunar/lroc_color_poles_1k.jpg';
@@ -18,6 +20,23 @@ const BUMP_SCALE = 0.015;
 
 /** Prime meridian sits at the centre of the equirectangular maps, which is +Z in this scene. */
 const TEXTURE_PRIME_MERIDIAN_ROTATION_Y = -Math.PI / 2;
+
+/**
+ * Pure function to map 8-bit heightmap pixels to the NASA SVS 3727 color ramp.
+ * Computes luminance and converts into NASA 16-stop LOLA hypsometry.
+ */
+export function generateSvsFalseColorPixels(data: Uint8ClampedArray): Uint8ClampedArray {
+  const output = new Uint8ClampedArray(data.length);
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255.0;
+    const [r, g, b] = getNasaSvsElevationNormalizedRgb(gray);
+    output[i] = r;
+    output[i + 1] = g;
+    output[i + 2] = b;
+    output[i + 3] = 255;
+  }
+  return output;
+}
 
 /** High-fidelity normal map built from the LOLA DEM through a Sobel gradient. */
 function generateNormalMapFromImage(image: HTMLImageElement, strength: number): THREE.CanvasTexture {
@@ -77,15 +96,37 @@ function generateNormalMapFromImage(image: HTMLImageElement, strength: number): 
   return texture;
 }
 
+/** Generates NASA SVS 3727 false-color hypsometric texture from DEM heightmap. */
+function generateSvsFalseColorTexture(image: HTMLImageElement): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(image, 0, 0);
+
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const falseColorData = generateSvsFalseColorPixels(imgData.data);
+  for (let i = 0; i < imgData.data.length; i++) {
+    imgData.data[i] = falseColorData[i];
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  return texture;
+}
+
 export interface MoonSurfaceHandlers {
-  /** One call per texture that resolved, including the polar-map fallback. */
   onTextureSettled: () => void;
-  /** Both color maps failed: the globe renders without LROC surface imagery. */
   onSurfaceUnavailable: (message: string) => void;
 }
 
 export interface MoonSurface {
   mesh: THREE.Mesh;
+  setScientificMode: (mode: ScientificMapLayerMode) => void;
   dispose: () => void;
 }
 
@@ -114,6 +155,19 @@ export function createMoonSurface({ onTextureSettled, onSurfaceUnavailable }: Mo
   topoImage.src = LOLA_DEM_TEXTURE_URL;
   let topoTexture: THREE.Texture | null = null;
   let normalTexture: THREE.CanvasTexture | null = null;
+  let svsTexture: THREE.CanvasTexture | null = null;
+  let activeMode: ScientificMapLayerMode = 'topography';
+
+  const applyActiveTexture = () => {
+    if (activeMode === 'topography' && svsTexture) {
+      material.map = svsTexture;
+      material.color.setHex(0xffffff);
+    } else {
+      material.map = colorTexture;
+      material.color.setHex(REGOLITH_TINT);
+    }
+    material.needsUpdate = true;
+  };
 
   topoImage.onload = () => {
     topoTexture = new THREE.Texture(topoImage);
@@ -122,15 +176,14 @@ export function createMoonSurface({ onTextureSettled, onSurfaceUnavailable }: Mo
     topoTexture.wrapT = THREE.ClampToEdgeWrapping;
 
     normalTexture = generateNormalMapFromImage(topoImage, NORMAL_MAP_STRENGTH);
+    svsTexture = generateSvsFalseColorTexture(topoImage);
 
-    // Apply smooth normal and bump shading without geometric vertex displacement spikes
     material.bumpMap = topoTexture;
     material.bumpScale = BUMP_SCALE;
-
     material.normalMap = normalTexture;
     material.normalScale = new THREE.Vector2(NORMAL_SCALE, NORMAL_SCALE);
-    material.needsUpdate = true;
 
+    applyActiveTexture();
     onTextureSettled();
   };
 
@@ -147,12 +200,17 @@ export function createMoonSurface({ onTextureSettled, onSurfaceUnavailable }: Mo
 
   return {
     mesh,
+    setScientificMode: (mode: ScientificMapLayerMode) => {
+      activeMode = mode;
+      applyActiveTexture();
+    },
     dispose: () => {
       geometry.dispose();
       material.dispose();
       colorTexture.dispose();
       if (topoTexture) topoTexture.dispose();
       if (normalTexture) normalTexture.dispose();
+      if (svsTexture) svsTexture.dispose();
     },
   };
 }

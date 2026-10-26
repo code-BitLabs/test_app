@@ -8,6 +8,7 @@ import {
   isSoftwareGl,
 } from '@/features/spatial/globe/scene/globeScene';
 import { MoonSurface, createMoonSurface } from '@/features/spatial/globe/scene/globeSurfaceMaterial';
+import { createLaserTracksGroup } from '@/features/spatial/globe/scene/globeLaserTracks';
 import { createGraticuleGroup, createPolarFootprintGroup } from '@/features/spatial/globe/scene/globeGraticule';
 import { SiteMarker, applyMarkerHorizonOcclusion, createSiteMarkers } from '@/features/spatial/globe/scene/globeSiteMarkers';
 import { CameraTransitioner, createCameraTransitioner } from '@/features/spatial/globe/interaction/globeCameraPresets';
@@ -58,6 +59,7 @@ export interface GlobeSceneHandle {
   setDisplayOptions?: (opts: { showMarkers?: boolean; showLabels?: boolean; showTerrain?: boolean }) => void;
   setLayerVisibility?: (showGrid: boolean, showShadowRegions: boolean) => void;
   setVectorsVisibility?: (showVectors: boolean) => void;
+  setLaserTracksVisible?: (visible: boolean) => void;
   setFlyover?: (active?: boolean) => void;
   isFlyoverActive?: () => boolean;
   setRoverActive?: (active: boolean) => void;
@@ -114,6 +116,9 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
 
   const vectorsGroup = new THREE.Group();
   globeGroup.add(vectorsGroup);
+
+  const laserTracks = createLaserTracksGroup();
+  globeGroup.add(laserTracks.group);
 
   const { markers, hitTargets } = createSiteMarkers(input.initialSelectedSiteId);
   markers.forEach((marker) => globeGroup.add(marker.container));
@@ -417,6 +422,7 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
     },
     setScientificMode: (mode: ScientificMapLayerMode) => {
       polarTerrain.setScientificMode(mode);
+      surface.setScientificMode(mode);
     },
     setCameraPreset: (preset: CameraPreset) => {
       currentCameraPreset = preset;
@@ -466,6 +472,9 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
       const isDeep = dist < 0.65;
       vectorsGroup.visible = !isDeep && showVectors;
     },
+    setLaserTracksVisible: (visible: boolean) => {
+      laserTracks.setVisible(visible);
+    },
     setFlyover: (active?: boolean) => {
       isFlyoverEnabled = active !== undefined ? active : !isFlyoverEnabled;
     },
@@ -489,6 +498,7 @@ export function buildGlobeScene(input: GlobeSceneBuildInput): GlobeSceneHandle |
       }
       surface.dispose();
       polarTerrain.dispose();
+      laserTracks.dispose();
     },
   };
 }

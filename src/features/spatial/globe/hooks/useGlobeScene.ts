@@ -29,6 +29,7 @@ export interface UseGlobeSceneInput {
   showGrid: boolean;
   showShadowRegions: boolean;
   showVectors: boolean;
+  showLaserTracks?: boolean;
   showTerrain?: boolean;
   showMarkers?: boolean;
   showLabels?: boolean;
@@ -72,6 +73,7 @@ export function useGlobeScene(input: UseGlobeSceneInput): UseGlobeSceneResult {
     showTerrain,
     showMarkers,
     showLabels,
+    showLaserTracks,
     cameraPreset,
     onCameraPresetChange,
     isFlyoverActive,
@@ -191,6 +193,7 @@ export function useGlobeScene(input: UseGlobeSceneInput): UseGlobeSceneResult {
     showTerrain,
     showMarkers,
     showLabels,
+    showLaserTracks,
     cameraPreset,
     applyCameraPreset,
     scientificMapMode: input.scientificMapMode,

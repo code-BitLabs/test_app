@@ -284,6 +284,9 @@ export function renderCelestialVectors(group: THREE.Group, input: CelestialVecto
 
     earthMesh.position.copy(earthOrbPos);
     atmosphereMesh.position.copy(earthOrbPos);
+    const sunDirFromEarth = sunOrbPos.clone().sub(earthOrbPos).normalize();
+    earthMesh.lookAt(earthOrbPos.clone().add(sunDirFromEarth));
+    earthMesh.rotateZ(-0.41);
 
     // Update earth label if status text changed
     if (earthLabel.userData.text !== earthStatusText) {
@@ -353,15 +356,21 @@ export function renderCelestialVectors(group: THREE.Group, input: CelestialVecto
     })
   );
   earthMesh.position.copy(earthOrbPos);
-  earthMesh.rotation.y = -Math.PI / 2;
+  const initialSunDirFromEarth = sunOrbPos.clone().sub(earthOrbPos).normalize();
+  earthMesh.lookAt(earthOrbPos.clone().add(initialSunDirFromEarth));
+  earthMesh.rotateZ(-0.41);
   group.add(earthMesh);
 
   const atmosphereMesh = new THREE.Mesh(
     new THREE.SphereGeometry(EARTH_ATMOSPHERE_RADIUS, 32, 32),
-    new THREE.MeshBasicMaterial({
-      color: 0x60a5fa,
+    new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
       transparent: true,
-      opacity: EARTH_ATMOSPHERE_OPACITY,
+      opacity: 0.12,
+      roughness: 0.2,
+      metalness: 0.0,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
     })
   );
   atmosphereMesh.position.copy(earthOrbPos);

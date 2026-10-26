@@ -137,6 +137,13 @@ export const LAYER_BUTTONS: LayerToggleButton[] = [
     ariaLabel: 'Toggle shadow regions',
     activeClassName: 'bg-[var(--lm-color-surface-strong)] text-[#8CCBFF] border border-[#8CCBFF]/40',
   },
+  {
+    layer: 'laserTracks',
+    label: 'Tracks',
+    title: 'Toggle NASA SVS 3633 LOLA Laser Altimeter Ground Tracks',
+    ariaLabel: 'Toggle LOLA laser ground tracks',
+    activeClassName: 'bg-[var(--lm-color-surface-strong)] text-cyan-400 border border-cyan-400/40',
+  },
 ];
 
 /** Shared resting state for every toolbar button. */

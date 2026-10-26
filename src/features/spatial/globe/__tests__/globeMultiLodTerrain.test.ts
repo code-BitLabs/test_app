@@ -5,20 +5,20 @@ import { CANDIDATE_SITES } from '@/domain/sites/catalog';
 
 const testSite = CANDIDATE_SITES[0]; // Shackleton Crater Rim
 
-test('Multi-LOD Terrain: Initializes at 64x64 base resolution with perimeter skirts', () => {
+test('Multi-LOD Terrain: Initializes continuous spherical polar cap at base resolution', () => {
   const terrain = createMultiLodTerrainMesh(testSite);
   const diag = terrain.getTerrainDiagnostics();
 
   assert.equal(diag.currentLOD, '64x64');
   assert.equal(diag.isHighDetailActive, false);
-  assert.ok(diag.vertexCount > 64 * 64, 'Vertex count must include grid plus perimeter skirts');
-  assert.ok(diag.triangleCount > 64 * 64 * 2);
+  assert.ok(diag.vertexCount >= 2000, `Expected at least 2000 vertices for continuous cap, got ${diag.vertexCount}`);
+  assert.ok(diag.triangleCount >= 4000, `Expected at least 4000 triangles, got ${diag.triangleCount}`);
   assert.ok(diag.sourceDem.includes('LOLA'));
 
   terrain.dispose();
 });
 
-test('Multi-LOD Terrain: Dynamically transitions to 128x128 on close camera proximity', () => {
+test('Multi-LOD Terrain: Dynamically transitions to high-detail cap on close camera proximity', () => {
   const terrain = createMultiLodTerrainMesh(testSite);
 
   // Distant range (0.5 units) -> 64x64
@@ -30,14 +30,14 @@ test('Multi-LOD Terrain: Dynamically transitions to 128x128 on close camera prox
   const deepDiag = terrain.getTerrainDiagnostics();
   assert.equal(deepDiag.currentLOD, '128x128');
   assert.equal(deepDiag.isHighDetailActive, true);
-  assert.ok(deepDiag.vertexCount > 128 * 128);
-  assert.equal(deepDiag.effectiveResolution, '20 m/pixel (Refined Patch)');
+  assert.ok(deepDiag.vertexCount >= 8000, `Expected high-detail vertices >= 8000, got ${deepDiag.vertexCount}`);
+  assert.equal(deepDiag.effectiveResolution, '20 m/pixel (LRO LOLA Polar Cap)');
 
   // Hysteresis: at 0.32 units, stays at 128x128 to prevent thrashing
   terrain.updateLOD(0.32);
   assert.equal(terrain.getTerrainDiagnostics().currentLOD, '128x128');
 
-  // Pull back beyond 0.36 units -> reverts to 64x64
+  // Pull back beyond 0.38 units -> reverts to 64x64
   terrain.updateLOD(0.42);
   assert.equal(terrain.getTerrainDiagnostics().currentLOD, '64x64');
 
