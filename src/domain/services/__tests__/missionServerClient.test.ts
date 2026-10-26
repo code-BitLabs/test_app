@@ -64,3 +64,19 @@ test('Mission Server Client: computes volatile prospect via fallback when backen
   assert.ok(prospect.hydrogenWeightPct > 0.1);
   assert.ok(prospect.isruFeasibilityScore > 0);
 });
+
+test('Mission Server Client: optimizes landing windows via fallback when backend is unreachable', async () => {
+  const client = missionServerClient.withBaseUrl('http://127.0.0.1:59999/api');
+
+  const result = await client.optimizeLandingWindows({
+    siteId: 'connecting-ridge',
+    startEpochMs: Date.UTC(2026, 9, 1),
+    endEpochMs: Date.UTC(2026, 11, 31),
+    stayDurationDays: 14,
+    topN: 2,
+  });
+
+  assert.equal(result.source, 'local_analytical_fallback');
+  assert.equal(result.siteId, 'connecting-ridge');
+  assert.ok(result.topWindows.length > 0);
+});

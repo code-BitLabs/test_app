@@ -19,6 +19,7 @@ import { GlobeHoverCard } from '@/features/spatial/globe/components/GlobeHoverCa
 import { GlobeLegend } from '@/features/spatial/globe/components/GlobeLegend';
 import { GlobeCandidateRibbon } from '@/features/spatial/globe/components/GlobeCandidateRibbon';
 import { GlobeDiagnosticsOverlay } from '@/features/spatial/globe/components/GlobeDiagnosticsOverlay';
+import { AstronautHelmetHud } from '@/features/spatial/globe/components/AstronautHelmetHud';
 import { useGlobeScene } from '@/features/spatial/globe/hooks/useGlobeScene';
 
 export interface LunarGlobe3DProps {
@@ -144,6 +145,18 @@ export function LunarGlobe3D(props: LunarGlobe3DProps) {
 
       {/* WebGL mount point: the renderer appends and removes its own canvas here. */}
       <div ref={containerRef} className="w-full h-full flex-1 cursor-grab active:cursor-grabbing min-h-0" />
+
+      {cameraPreset === 'eva' && (
+        <AstronautHelmetHud
+          site={selectedSite}
+          subSolarLatDeg={subSolarLatDeg}
+          subSolarLonDeg={subSolarLonDeg}
+          subEarthLatDeg={subEarthLatDeg}
+          subEarthLonDeg={subEarthLonDeg}
+          earthElevationDeg={earthElevationValue}
+          onExit={() => onCameraPresetChange('site')}
+        />
+      )}
 
       {hoveredSite && <GlobeHoverCard site={hoveredSite} />}
 

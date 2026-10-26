@@ -19,6 +19,7 @@ import { ComparisonEarthRows } from '@/features/comparison/components/rows/Compa
 import { ComparisonPolicyNotice } from '@/features/comparison/components/ComparisonPolicyNotice';
 import { SiteTradeStudySpiderChart } from '@/features/comparison/components/SiteTradeStudySpiderChart';
 import { MissionDateWindowSelector } from '@/features/comparison/components/MissionDateWindowSelector';
+import { ParetoLandingWindowModal } from '@/features/comparison/components/ParetoLandingWindowModal';
 
 interface ComparisonMatrixProps {
   onSelectSiteForExplore: (site: CandidateSite) => void;
@@ -34,6 +35,7 @@ export function ComparisonMatrix({ onSelectSiteForExplore }: ComparisonMatrixPro
   const [selectedSiteIds, setSelectedSiteIds] = useState<string[]>([...DEFAULT_COMPARISON_SITE_IDS]);
   const [catalogTab, setCatalogTab] = useState<CatalogCategoryTab>('artemis-2024');
   const [durationDays, setDurationDays] = useState(14);
+  const [isParetoModalOpen, setIsParetoModalOpen] = useState(false);
 
   const columns = useMemo(
     () => buildComparisonColumns(selectedSiteIds, epochMs, calculationMode),
@@ -91,6 +93,15 @@ export function ComparisonMatrix({ onSelectSiteForExplore }: ComparisonMatrixPro
         durationDays={durationDays}
         onSelectDate={(date) => setEpoch(date.getTime())}
         onSelectDuration={setDurationDays}
+        onOpenParetoSolver={() => setIsParetoModalOpen(true)}
+      />
+
+      <ParetoLandingWindowModal
+        isOpen={isParetoModalOpen}
+        onClose={() => setIsParetoModalOpen(false)}
+        siteId={activeSites[0]?.id || 'shackleton-ridge'}
+        siteName={activeSites[0]?.name || 'Shackleton Ridge'}
+        onSelectWindow={(win) => setEpoch(win.startEpochMs)}
       />
 
       {/* 2. Category Quick Add Ribbon */}

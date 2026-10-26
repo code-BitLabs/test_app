@@ -157,6 +157,27 @@ export function cameraPoseForPreset(preset: CameraPreset, site: CandidateSite): 
     };
   }
 
+  if (preset === 'eva') {
+    // First-Person Astronaut Eye-Level (~1.8m above LOLA datum)
+    // Looking forward across the local terrain toward the illuminated ridge
+    const altitude = 0.003;
+    const tangentOffset = 0.006;
+    const camPos = surfacePos
+      .clone()
+      .add(normal.clone().multiplyScalar(altitude))
+      .add(north.clone().multiplyScalar(-tangentOffset));
+    const lookTarget = surfacePos
+      .clone()
+      .add(normal.clone().multiplyScalar(altitude))
+      .add(north.clone().multiplyScalar(0.040));
+
+    return {
+      camPos,
+      lookTarget,
+      upVector: normal.clone().normalize(),
+    };
+  }
+
   // 'site' preset: Candidate Overview framing surrounding crater complexes (1.26 units range, within 1.0 - 2.0 units)
   return {
     camPos: surfacePos

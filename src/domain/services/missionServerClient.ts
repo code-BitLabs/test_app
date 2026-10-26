@@ -10,6 +10,8 @@ import { calculateTraversalPlan } from '@domain/traversal/traversePlanner';
 import type { TraversalPlan, TraversalPlanRequest } from '@domain/traversal/types';
 import { prospectVolatilesAtCoordinates } from '@domain/volatiles/volatileProspector';
 import type { VolatileProspectingResult } from '@domain/volatiles/types';
+import { solveParetoLandingWindows } from '@domain/windows/paretoWindowSolver';
+import type { ParetoOptimizationResult, ParetoWindowRequest } from '@domain/windows/types';
 import type { CalculationMode } from '@domain/celestial/calculationMode';
 
 export interface MissionServerClientConfig {
@@ -198,6 +200,33 @@ export class MissionServerClient {
     }
 
     const data = prospectVolatilesAtCoordinates(input.latDeg, input.lonDeg);
+    return { ...data, source: 'local_analytical_fallback' as const };
+  }
+
+  async optimizeLandingWindows(
+    input: ParetoWindowRequest,
+  ): Promise<ParetoOptimizationResult & { source: 'nextrush_server' | 'local_analytical_fallback' }> {
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), this.config.timeoutMs);
+      const res = await fetch(`${this.config.baseUrl}/windows/optimize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+        signal: controller.signal,
+      });
+      clearTimeout(id);
+      if (res.ok) {
+        const body = await res.json();
+        if (body.data) {
+          return { ...body.data, source: 'nextrush_server' as const };
+        }
+      }
+    } catch {
+      // Backend offline; execute local analytical fallback
+    }
+
+    const data = solveParetoLandingWindows(input);
     return { ...data, source: 'local_analytical_fallback' as const };
   }
 }

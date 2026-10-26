@@ -12,6 +12,7 @@ import {
   Globe as GlobeIcon,
   Map as MapIcon,
   ZoomIn,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import { CameraPreset, SpatialLayer } from '@/features/spatial/model/spatialPreferences';
@@ -93,6 +94,13 @@ export const CAMERA_PRESETS: CameraPresetOption[] = [
     title: 'Local Site Inspection: Deep zoom grazing view of crater relief and lighting',
     Icon: ZoomIn,
     iconClassName: 'w-3 h-3 text-[var(--lm-color-sun)]',
+  },
+  {
+    preset: 'eva',
+    label: 'EVA Visor',
+    title: 'Astronaut Helmet Visor HUD: Ground-level first-person surface EVA perspective',
+    Icon: Sparkles,
+    iconClassName: 'w-3 h-3 text-cyan-400',
   },
 ];
 

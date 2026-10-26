@@ -251,9 +251,23 @@ gantt
   - NextRush endpoint `POST /api/volatiles/prospect` with offline fallback.
   - 272 green tests across 53 test files.
 
-### Immediate Next Actions (Phase 4):
-1. **Pareto-Optimal Landing Window Solver**:
-   - Multi-year automated solver sweeping 2026–2028 landing dates to score and rank optimal launch windows based on continuous solar power and DTE clearance.
-   - Solves for maximum uninterrupted sunlight and positive Earth elevation windows across candidate sites.
-2. **Astronaut Helmet HUD Surface EVA Mode (Phase 5)**:
-   - First-person ground perspective with solar glare post-processing and helmet visor telemetry.
+- [x] **Pareto-Optimal Landing Window Solver (`src/domain/windows/`, `server/src/routes/windowRoutes.ts`, `src/features/comparison/`)**:
+  - Multi-objective Pareto frontier scoring ($45\%$ sunlight, $35\%$ DTE, $20\%$ shadow resilience) sweeping synodic lunar cycles.
+  - Generates ranked landing windows with continuous sunlight hours, max shadow duration, and feasibility verdicts (`optimal`, `acceptable`, `constrained`).
+  - NextRush endpoint `POST /api/windows/optimize` with Zod schema validation and resilient client adapter.
+  - Interactive `ParetoLandingWindowModal` (181L) + `RankedWindowItem` (59L) wired into date selector and comparison matrix.
+
+- [x] **Astronaut Helmet Visor HUD & First-Person Surface EVA Mode (`src/features/spatial/globe/`)**:
+  - Authentic NASA xEMU PLSS life support model (4.3 psia $100\%$ O2, 12h PLSS margin, 8.5h battery).
+  - Celestial hazard detection: grazing solar glare warning ($0^\circ-3^\circ$ incidence) and scarp slope danger cutoff ($>15^\circ$).
+  - High-contrast gold-tinted visor HUD (`AstronautHelmetHud.tsx`, 182L) with artificial horizon pitch ladder, compass ribbon, and telemetry cards.
+  - Integrated into Three.js 3D globe scene under the `'eva'` camera preset in `LunarGlobe3D.tsx` (183L).
+  - 279 green tests across 55 test files.
+
+### Immediate Next Actions (Phase 6):
+1. **Championship Polish & End-to-End Verification**:
+   - Comprehensive test suite audit (ensure $\ge 280$ tests green, 0 compiler errors).
+   - End-to-end browser walkthrough verifying all features: DSN telecom, rover traversal, volatiles overlay, Pareto solver, and helmet HUD.
+2. **2-Minute Video Pitch & NASA Submission Dossier**:
+   - Record and script the 2-minute championship video pitch.
+   - Deliver project submission brief aligning with the NASA Space Apps 2026 judging rubric.

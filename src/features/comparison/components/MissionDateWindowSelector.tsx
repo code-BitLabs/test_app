@@ -1,11 +1,12 @@
 import React from 'react';
-import { Calendar, Clock, SunMedium, Compass } from 'lucide-react';
+import { Calendar, Clock, SunMedium, Compass, Sparkles } from 'lucide-react';
 
 export interface MissionDateWindowSelectorProps {
   selectedDate: Date;
   durationDays: number;
   onSelectDate: (date: Date) => void;
   onSelectDuration: (days: number) => void;
+  onOpenParetoSolver?: () => void;
   className?: string;
 }
 
@@ -38,6 +39,7 @@ export function MissionDateWindowSelector({
   durationDays,
   onSelectDate,
   onSelectDuration,
+  onOpenParetoSolver,
   className = '',
 }: MissionDateWindowSelectorProps) {
   const selectedIso = selectedDate.toISOString();
@@ -51,6 +53,17 @@ export function MissionDateWindowSelector({
           <Calendar className="w-3.5 h-3.5 text-cyan-400" />
           Mission Window:
         </span>
+
+        {onOpenParetoSolver && (
+          <button
+            type="button"
+            onClick={onOpenParetoSolver}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-bold rounded-[var(--lm-radius-sm)] border border-cyan-500/60 bg-gradient-to-r from-cyan-950/80 to-indigo-950/80 text-cyan-300 hover:from-cyan-900/80 hover:to-indigo-900/80 transition-all cursor-pointer shadow-sm"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Pareto Solver (2026-2028)</span>
+          </button>
+        )}
 
         {PRESET_WINDOWS.map((preset) => {
           const isActive = selectedIso.startsWith(preset.dateIso.slice(0, 10));

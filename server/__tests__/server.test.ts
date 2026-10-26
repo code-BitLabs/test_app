@@ -182,6 +182,44 @@ test('NextRush Server: POST /api/volatiles/prospect rejects invalid coordinates 
   assert.equal(data.error, 'Invalid volatile prospecting payload');
 });
 
+test('NextRush Server: POST /api/windows/optimize finds ranked Pareto windows', async () => {
+  const req = new Request('http://localhost:3001/api/windows/optimize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      siteId: 'connecting-ridge',
+      startEpochMs: Date.UTC(2026, 9, 1),
+      endEpochMs: Date.UTC(2026, 11, 31),
+      stayDurationDays: 14,
+      topN: 3,
+    }),
+  });
+
+  const res = await handler(req);
+  assert.equal(res.status, 200);
+
+  const body = await res.json();
+  assert.equal(body.success, true);
+  assert.ok(body.data !== undefined);
+  assert.equal(body.data.siteId, 'connecting-ridge');
+  assert.ok(body.data.topWindows.length > 0);
+  assert.equal(body.data.topWindows[0].rank, 1);
+});
+
+test('NextRush Server: POST /api/windows/optimize rejects missing fields with 400', async () => {
+  const req = new Request('http://localhost:3001/api/windows/optimize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ siteId: '' }),
+  });
+
+  const res = await handler(req);
+  assert.equal(res.status, 400);
+
+  const data = await res.json();
+  assert.equal(data.error, 'Invalid landing window optimization payload');
+});
+
 test('NextRush Server: handles 404 for unknown endpoints gracefully', async () => {
   const req = new Request('http://localhost:3001/api/unknown-endpoint', { method: 'GET' });
   const res = await handler(req);
