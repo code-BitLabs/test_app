@@ -30,6 +30,17 @@
         "vite": "^8.3.5",
       },
     },
+    "server": {
+      "name": "@luna/server",
+      "version": "1.0.0",
+      "dependencies": {
+        "@nextrush/adapter-bun": "^1.1.0",
+        "@nextrush/body-parser": "^4.1.0",
+        "@nextrush/core": "^4.1.0",
+        "@nextrush/cors": "^4.0.1",
+        "@nextrush/router": "^4.1.0",
+      },
+    },
   },
   "packages": {
     "@dimforge/rapier3d-compat": ["@dimforge/rapier3d-compat@0.12.0", "", {}, "sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow=="],
@@ -95,6 +106,8 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.6.0", "", {}, "sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
+
+    "@luna/server": ["@luna/server@workspace:server"],
 
     "@nextrush/adapter-bun": ["@nextrush/adapter-bun@1.1.0", "", { "dependencies": { "@nextrush/core": "^4.1.0", "@nextrush/errors": "^4.1.0", "@nextrush/runtime": "^4.1.0", "@nextrush/stream": "^1.0.3", "@nextrush/types": "^4.1.0" } }, "sha512-+FNLaCMA3GQI1B39ArcTyCnvt8B4RZLF9avpNJFlo145exNm9URAwr7iOqM+nix8Pu0XXLl8rUbPzIMDKnqJUw=="],
 
