@@ -18,6 +18,7 @@ import { CraterLayer } from '@/features/spatial/map/layers/CraterLayer';
 import { CandidateLayer } from '@/features/spatial/map/layers/CandidateLayer';
 import { SunEarthVectorLayer } from '@/features/spatial/map/layers/SunEarthVectorLayer';
 import { CustomPointLayer } from '@/features/spatial/map/layers/CustomPointLayer';
+import { MapSvgDefs } from './MapSvgDefs';
 
 const { svgSize: SVG_SIZE, center: CENTER, maxRadius: MAX_RADIUS } = DEFAULT_PROJECTION_CONFIG;
 
@@ -113,33 +114,7 @@ export function MapCanvas({
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full select-none"
       >
-        <defs>
-          {/* PSR Diagonal Hatch Pattern */}
-          <pattern
-            id="psr-hatch"
-            width="6"
-            height="6"
-            patternTransform="rotate(45 0 0)"
-            patternUnits="userSpaceOnUse"
-          >
-            <line
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="6"
-              stroke="#4a6585"
-              strokeWidth="1.2"
-              strokeOpacity="0.45"
-            />
-          </pattern>
-
-          {/* Radial Terrain Gradient for Polar Basin */}
-          <radialGradient id="pole-gradient" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#141d2c" />
-            <stop offset="70%" stopColor="#0d1422" />
-            <stop offset="100%" stopColor="#070b12" />
-          </radialGradient>
-        </defs>
+        <MapSvgDefs />
 
         {/* Zoomable / Pannable Map Container */}
         <g style={viewportStyle}>
@@ -202,7 +177,7 @@ export function MapCanvas({
 
       {/* Floating Scientific Map Product Legend & Layer Selector */}
       {onSelectScientificMapMode && (
-        <div className="absolute bottom-4 left-4 z-20 pointer-events-none max-w-xs">
+        <div className="absolute bottom-4 right-4 z-20 pointer-events-none max-w-xs">
           <ScientificMapLegend
             mode={scientificMapMode}
             onSelectMode={onSelectScientificMapMode}

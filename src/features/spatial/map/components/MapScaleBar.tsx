@@ -8,6 +8,7 @@ export interface MapScaleBarProps {
   cursorDistanceKm: number | null;
   selectedSite: CandidateSite;
   hideRibbon?: boolean;
+  className?: string;
 }
 
 /**
@@ -21,6 +22,7 @@ export function MapScaleBar({
   cursorDistanceKm,
   selectedSite,
   hideRibbon = false,
+  className = '',
 }: MapScaleBarProps) {
   const scale = useMemo(() => calculateScaleBar(zoom), [zoom]);
 
@@ -28,7 +30,7 @@ export function MapScaleBar({
     <div
       className={`absolute ${
         hideRibbon ? 'bottom-3' : 'bottom-13'
-      } left-3 z-20 flex flex-wrap items-center gap-2.5 pointer-events-none bg-[var(--lm-color-surface)]/92 backdrop-blur-md px-2.5 py-1.5 rounded-[var(--lm-radius-sm)] border border-[var(--lm-color-border)] text-[11px] font-mono-num text-[var(--lm-color-text-muted)] shadow-sm`}
+      } left-3 z-20 flex flex-wrap items-center gap-2.5 pointer-events-none bg-[var(--lm-color-surface)]/92 backdrop-blur-md px-2.5 py-1.5 rounded-[var(--lm-radius-sm)] border border-[var(--lm-color-border)] text-[11px] font-mono-num text-[var(--lm-color-text-muted)] shadow-sm ${className}`}
     >
       {/* Dynamic Scale Bar */}
       <div className="flex items-center gap-1.5">

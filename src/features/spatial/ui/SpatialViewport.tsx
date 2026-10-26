@@ -95,7 +95,10 @@ export function SpatialViewport({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full h-full min-h-0 flex-1 p-2 overflow-y-auto md:overflow-hidden bg-[var(--lm-color-canvas)]">
+    <div
+      data-testid="spatial-dual-viewport"
+      className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full h-full min-h-0 flex-1 p-2 overflow-y-auto md:overflow-hidden bg-[var(--lm-color-canvas)]"
+    >
       <ViewportPanel
         title="2D Polar Map"
         subtitle="83°S–90°S Stereographic"

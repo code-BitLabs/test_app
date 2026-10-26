@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import { CandidateSite } from '@/domain/sites/candidateSite';
 import { ResultAvailability } from '@/domain/celestial/availability';
 import { availableValue } from '@/shared/formatting/availability';
@@ -20,21 +20,17 @@ import { GlobeHoverCard } from '@/features/spatial/globe/components/GlobeHoverCa
 import { GlobeLegend } from '@/features/spatial/globe/components/GlobeLegend';
 import { NasaSvsElevationLegend } from '@/features/spatial/globe/components/NasaSvsElevationLegend';
 import { GlobeCandidateRibbon } from '@/features/spatial/globe/components/GlobeCandidateRibbon';
-import { GlobeDiagnosticsOverlay } from '@/features/spatial/globe/components/GlobeDiagnosticsOverlay';
-import { AstronautHelmetHud } from '@/features/spatial/globe/components/AstronautHelmetHud';
+import { GlobeFlightDeckHudOverlay } from '@/features/spatial/globe/components/GlobeFlightDeckHudOverlay';
 import { useGlobeScene } from '@/features/spatial/globe/hooks/useGlobeScene';
 
 export interface LunarGlobe3DProps {
   selectedSite: CandidateSite;
   onSelectSite: (site: CandidateSite) => void;
-  /** Selenographic body-fixed frame (global ephemeris), used to place Sun/Earth in space. */
   subSolarLatDeg: SelenographicLatitudeDeg;
   subSolarLonDeg: SelenographicLongitudeDeg;
   subEarthLatDeg: SelenographicLatitudeDeg;
   subEarthLonDeg: SelenographicLongitudeDeg;
-  /** Topocentric horizon frame at selectedSite; drives the DTE link styling. */
   earthElevationDeg?: ResultAvailability<TopocentricElevationDeg>;
-  /** Display preferences owned by the workspace, so one toolbar drives map and globe. */
   showGrid: boolean;
   showShadowRegions: boolean;
   showVectors: boolean;
@@ -46,16 +42,14 @@ export interface LunarGlobe3DProps {
   onToggleShadowRegions: () => void;
   onToggleVectors: () => void;
   onToggleLaserTracks?: () => void;
-  /** The globe is embedded in the workspace, which supplies its own toolbar and ribbon. */
   hideHeader?: boolean;
   hideRibbon?: boolean;
   hideLegend?: boolean;
-  /** Owned by the workspace so the toolbar and the globe's own buttons agree. */
   cameraPreset: CameraPreset;
   onCameraPresetChange: (preset: CameraPreset) => void;
   scientificMapMode?: ScientificMapLayerMode;
   onRoverTelemetryChange?: (telemetry: RoverTelemetry | null) => void;
-  /** Optional diagnostics toggle for development and standalone test routes */
+  onRoverActiveChange?: (active: boolean) => void;
   showDiagnostics?: boolean;
   epochIsoUtc?: string;
   isFlyoverActive?: boolean;
@@ -67,72 +61,46 @@ export interface LunarGlobe3DProps {
 }
 
 /**
- * The 3D lunar globe: layout and status surfaces only. Scene construction,
- * epoch binding and disposal live in `useGlobeScene`, and each scene concern
- * lives in its own module under `globe/`.
+ * Authoritative 3D lunar flight deck rendering IAU 2000 ME frames and LOLA DEM.
+ * Scene management delegates to useGlobeScene; HUD overlays mount in GlobeFlightDeckHudOverlay.
  */
 export function LunarGlobe3D(props: LunarGlobe3DProps) {
   const {
     selectedSite,
-    subSolarLatDeg,
-    subSolarLonDeg,
-    subEarthLatDeg,
-    subEarthLonDeg,
-    earthElevationDeg,
-    showGrid,
-    showShadowRegions,
-    showVectors,
-    showLaserTracks,
-    showTerrain,
-    showMarkers,
-    showLabels,
-    onToggleGrid,
-    onToggleShadowRegions,
-    onToggleVectors,
+    cameraPreset,
+    onCameraPresetChange,
+    onSelectSite,
     hideHeader = false,
     hideRibbon = false,
     hideLegend = false,
-    cameraPreset,
-    onCameraPresetChange,
-    onSelectSite,
     showDiagnostics = false,
     epochIsoUtc,
-    isFlyoverActive,
-    onFlyoverChange,
   } = props;
 
-  // Unknown elevation must never be presented as "0°" or as a clear line of sight.
-  const earthElevationValue = earthElevationDeg === undefined ? null : availableValue(earthElevationDeg);
+  const [internalRoverActive, setInternalRoverActive] = useState(false);
+  const [internalTelemetry, setInternalTelemetry] = useState<RoverTelemetry | null>(null);
+
+  const isRoverActive = props.isRoverActive ?? internalRoverActive;
+  const toggleRoverActive = () => {
+    const next = !isRoverActive;
+    setInternalRoverActive(next);
+    props.onRoverActiveChange?.(next);
+  };
+
+  const handleRoverTelemetry = (telemetry: RoverTelemetry | null) => {
+    setInternalTelemetry(telemetry);
+    props.onRoverTelemetryChange?.(telemetry);
+  };
+
+  const earthElevationValue = props.earthElevationDeg === undefined ? null : availableValue(props.earthElevationDeg);
   const earthElevationDisplay =
-    earthElevationValue === null
-      ? '—'
-      : `${earthElevationValue >= 0 ? '+' : ''}${earthElevationValue.toFixed(1)}° elev`;
+    earthElevationValue === null ? '—' : `${earthElevationValue >= 0 ? '+' : ''}${earthElevationValue.toFixed(1)}° elev`;
 
   const { containerRef, status, hoveredSite, applyCameraPreset, getDiagnostics } = useGlobeScene({
-    selectedSite,
-    onSelectSite,
-    subSolarLatDeg,
-    subSolarLonDeg,
-    subEarthLatDeg,
-    subEarthLonDeg,
+    ...props,
     earthElevationDeg: earthElevationValue,
-    showGrid,
-    showShadowRegions,
-    showVectors,
-    showLaserTracks,
-    showTerrain,
-    showMarkers,
-    showLabels,
-    cameraPreset,
-    onCameraPresetChange,
-    scientificMapMode: props.scientificMapMode,
-    onRoverTelemetryChange: props.onRoverTelemetryChange,
-    isFlyoverActive,
-    onFlyoverChange,
-    isRoverActive: props.isRoverActive,
-    customTarget: props.customTarget,
-    isPinpointMode: props.isPinpointMode,
-    onPinpointCustomTarget: props.onPinpointCustomTarget,
+    onRoverTelemetryChange: handleRoverTelemetry,
+    isRoverActive,
   });
 
   if (status.kind === 'unsupported') return <GlobeUnavailablePanel />;
@@ -143,13 +111,13 @@ export function LunarGlobe3D(props: LunarGlobe3DProps) {
         <GlobeControlsOverlay
           cameraPreset={cameraPreset}
           onSelectPreset={(preset) => applyCameraPreset(preset, selectedSite)}
-          showGrid={showGrid}
-          showShadowRegions={showShadowRegions}
-          showVectors={showVectors}
+          showGrid={props.showGrid}
+          showShadowRegions={props.showShadowRegions}
+          showVectors={props.showVectors}
           showLaserTracks={props.showLaserTracks}
-          onToggleGrid={onToggleGrid}
-          onToggleShadowRegions={onToggleShadowRegions}
-          onToggleVectors={onToggleVectors}
+          onToggleGrid={props.onToggleGrid}
+          onToggleShadowRegions={props.onToggleShadowRegions}
+          onToggleVectors={props.onToggleVectors}
           onToggleLaserTracks={props.onToggleLaserTracks}
         />
       )}
@@ -157,33 +125,28 @@ export function LunarGlobe3D(props: LunarGlobe3DProps) {
       {status.kind === 'loading' && <GlobeLoadingOverlay />}
       {status.kind === 'textureError' && <GlobeTextureErrorBanner message={status.message} />}
 
-      {/* WebGL mount point: the renderer appends and removes its own canvas here. */}
       <div ref={containerRef} className="w-full h-full flex-1 cursor-grab active:cursor-grabbing min-h-0" />
 
-      {cameraPreset === 'eva' && (
-        <AstronautHelmetHud
-          site={selectedSite}
-          subSolarLatDeg={subSolarLatDeg}
-          subSolarLonDeg={subSolarLonDeg}
-          subEarthLatDeg={subEarthLatDeg}
-          subEarthLonDeg={subEarthLonDeg}
-          earthElevationDeg={earthElevationValue}
-          onExit={() => onCameraPresetChange('site')}
-        />
-      )}
+      <GlobeFlightDeckHudOverlay
+        cameraPreset={cameraPreset}
+        onCameraPresetChange={onCameraPresetChange}
+        selectedSite={selectedSite}
+        subSolarLatDeg={props.subSolarLatDeg}
+        subSolarLonDeg={props.subSolarLonDeg}
+        subEarthLatDeg={props.subEarthLatDeg}
+        subEarthLonDeg={props.subEarthLonDeg}
+        earthElevationValue={earthElevationValue}
+        isRoverActive={isRoverActive}
+        onToggleRoverActive={toggleRoverActive}
+        roverTelemetry={internalTelemetry}
+        showDiagnostics={showDiagnostics}
+        getDiagnostics={getDiagnostics}
+        epochIsoUtc={epochIsoUtc}
+      />
 
       {hoveredSite && <GlobeHoverCard site={hoveredSite} />}
-
       {!hideLegend && <GlobeLegend earthElevationDisplay={earthElevationDisplay} isCompact={hideRibbon} />}
-
       <NasaSvsElevationLegend isVisible={props.scientificMapMode === 'topography'} />
-
-      <GlobeDiagnosticsOverlay
-        getDiagnostics={getDiagnostics}
-        selectedSite={selectedSite}
-        epochIsoUtc={epochIsoUtc}
-        isVisible={showDiagnostics}
-      />
 
       {!hideRibbon && (
         <GlobeCandidateRibbon

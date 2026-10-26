@@ -78,7 +78,7 @@ export function TimeSeriesChart({
       <svg
         ref={svgRef}
         viewBox={`0 0 ${TIME_CHART_WIDTH} ${TIME_CHART_HEIGHT}`}
-        className="w-full min-w-[700px] h-56 select-none cursor-crosshair touch-none"
+        className="w-full min-w-[540px] h-48 sm:h-52 select-none cursor-crosshair touch-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

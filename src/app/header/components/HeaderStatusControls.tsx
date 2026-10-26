@@ -8,8 +8,18 @@ interface HeaderStatusControlsProps {
   onOpenGuide: () => void;
 }
 
-/** Data-provenance badge and the guide entry point. */
+/** Data-provenance badge, guide entry point, and direct 3D Moon flight deck trigger. */
 export function HeaderStatusControls({ isDemoMode, onOpenProvenance, onOpenGuide }: HeaderStatusControlsProps) {
+  const handleTrigger3DMoon = () => {
+    try {
+      window.dispatchEvent(new CustomEvent('lm-activate-3d-moon'));
+      window.history.pushState(null, '', '/scenario/3d-lab');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    } catch {
+      window.location.hash = '#/scenario/3d-lab';
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       {isDemoMode ? (
@@ -36,23 +46,16 @@ export function HeaderStatusControls({ isDemoMode, onOpenProvenance, onOpenGuide
         </button>
       )}
 
-      <a
-        href="#/scenario/3d-lab"
-        onClick={(e) => {
-          e.preventDefault();
-          try {
-            window.history.pushState(null, '', '/scenario/3d-lab');
-            window.dispatchEvent(new PopStateEvent('popstate'));
-          } catch {
-            window.location.hash = '#/scenario/3d-lab';
-          }
-        }}
-        aria-label="Open 3D Lab Test Route"
+      <button
+        type="button"
+        onClick={handleTrigger3DMoon}
+        aria-label="Open 3D Moon Flight Deck"
+        data-testid="header-3d-moon-trigger"
         className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-medium rounded-[var(--lm-radius-xs)] border border-[var(--lm-color-selected-site)]/40 bg-[var(--lm-color-selected-site)]/10 text-[var(--lm-color-selected-site)] hover:bg-[var(--lm-color-selected-site)]/20 hover:border-[var(--lm-color-selected-site)] transition-colors cursor-pointer shadow-xs"
-        title="Open Standalone 3D Scientific Lab"
+        title="Open Unified 3D Planetary Flight Deck"
       >
-        <span>🔬 3D Lab</span>
-      </a>
+        <span>🪐 3D Moon</span>
+      </button>
 
       <button
         type="button"

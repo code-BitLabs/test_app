@@ -2,32 +2,54 @@ import { useEffect, useState } from 'react';
 import { Header } from '@/app/header/Header';
 import { NavTab } from '@/app/header/config/navTabs';
 import { SpatialWorkspace } from '@/features/spatial/ui/SpatialWorkspace';
-import { TimeExplorer } from '@/features/time/ui/TimeExplorer';
+import { SpatialViewMode } from '@/features/spatial/model/spatialViewMode';
 import { ComparisonMatrix } from '@/features/comparison/ui/ComparisonMatrix';
 import { TopocentricHorizonView } from '@/features/horizon/ui/TopocentricHorizonView';
 import { RoverTraverseView } from '@/features/traversal/ui/RoverTraverseView';
 import { MethodAndDataView } from '@/features/methodology/ui/MethodAndDataView';
 import { CandidateSite } from '@/domain/sites/candidateSite';
 import { useScenarioCommands, useScenarioModel } from '@/app/scenario/context/scenarioContext';
-import { Scenario3DLab } from '@/features/spatial/lab/Scenario3DLab';
 
 export default function App() {
+  const isInitial3D =
+    typeof window !== 'undefined' &&
+    (window.location.pathname.includes('3d-lab') ||
+      window.location.hash.includes('3d-lab') ||
+      window.location.search.includes('3d-lab'));
+
   const [activeTab, setActiveTab] = useState<NavTab>('explore');
-  const [currentPath, setCurrentPath] = useState(
-    typeof window !== 'undefined' ? window.location.pathname + window.location.hash : '/'
+  const [spatialViewMode, setSpatialViewMode] = useState<SpatialViewMode>(
+    isInitial3D ? 'globe3d' : 'map2d'
   );
 
   useEffect(() => {
-    const handleLocationChange = () => {
-      setCurrentPath(window.location.pathname + window.location.hash);
+    const checkAndApply3DRoute = () => {
+      const path = typeof window !== 'undefined' ? window.location.pathname + window.location.hash : '';
+      if (path.includes('3d-lab')) {
+        setActiveTab('explore');
+        setSpatialViewMode('globe3d');
+      }
     };
-    window.addEventListener('popstate', handleLocationChange);
-    window.addEventListener('hashchange', handleLocationChange);
+
+    const handleActivate3D = () => {
+      setActiveTab('explore');
+      setSpatialViewMode('globe3d');
+    };
+
+    window.addEventListener('popstate', checkAndApply3DRoute);
+    window.addEventListener('hashchange', checkAndApply3DRoute);
+    window.addEventListener('lm-activate-3d-moon', handleActivate3D);
+
+    if (isInitial3D) {
+      checkAndApply3DRoute();
+    }
+
     return () => {
-      window.removeEventListener('popstate', handleLocationChange);
-      window.removeEventListener('hashchange', handleLocationChange);
+      window.removeEventListener('popstate', checkAndApply3DRoute);
+      window.removeEventListener('hashchange', checkAndApply3DRoute);
+      window.removeEventListener('lm-activate-3d-moon', handleActivate3D);
     };
-  }, []);
+  }, [isInitial3D]);
 
   const { epochIsoUtc } = useScenarioModel();
   const { selectSite } = useScenarioCommands();
@@ -35,18 +57,6 @@ export default function App() {
   function handleSelectSiteForExplore(site: CandidateSite) {
     selectSite(site.id);
     setActiveTab('explore');
-  }
-
-  const is3DLabActive =
-    currentPath.includes('/scenario/3d-lab') ||
-    currentPath.includes('3d-lab') ||
-    (typeof window !== 'undefined' &&
-      (window.location.pathname.includes('3d-lab') ||
-        window.location.hash.includes('3d-lab') ||
-        window.location.search.includes('3d-lab')));
-
-  if (is3DLabActive) {
-    return <Scenario3DLab />;
   }
 
   return (
@@ -58,13 +68,13 @@ export default function App() {
       <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-6 min-w-0">
         {activeTab === 'explore' && (
           <div className="flex flex-col gap-6 w-full min-w-0">
-            {/* 1. Spatial Workspace: Toolbar, 2D/3D Visualization, Point Passport, and Candidate Sites */}
-            <SpatialWorkspace onOpenMethodDetails={() => setActiveTab('method')} />
-
-            {/* 2. Sibling Section: Continuous Ephemeris Time Explorer */}
-            <section className="w-full min-w-0" aria-label="Time-Series Celestial Ephemeris Explorer">
-              <TimeExplorer />
-            </section>
+            {/* Integrated Spatial Flight Deck: Viewport, Docked Time Explorer, Streamlined Passport, and Candidate Sites */}
+            <SpatialWorkspace
+              initialViewMode={spatialViewMode}
+              onViewModeChange={setSpatialViewMode}
+              onOpenMethodDetails={() => setActiveTab('method')}
+              onNavigateHorizon={() => setActiveTab('horizon')}
+            />
           </div>
         )}
 

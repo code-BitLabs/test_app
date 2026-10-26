@@ -30,19 +30,21 @@
 | **Phase 7** | **NASA SVS Flight-Grade Planetary Visualizer** (`src/features/spatial/globe/`) | ✅ Complete | NASA SVS 3727/3760/3633, radial spherical polar cap, Blue Marble Earth, 308 tests green |
 | **Phase 8** | **Custom Landing Target Studio** (`src/domain/target/`, `src/features/spatial/target/`) | ✅ Complete | Arbitrary polar coordinates, 3D click-to-pin, LOLA DEM elevation, DSN RF link budget, 328 tests green |
 | **Phase 9** | **Executive Mission Dossier Exporter** (`src/domain/dossier/`, `server/`, `src/features/dossier/`) | ✅ Complete | Multi-domain synthesis (LOLA+DSN+ISRU+Traverse), NextRush `/api/dossier/generate`, vector PDF print, 340 tests green |
+| **Phase 10** | **Homepage Flight Deck UX Architecture** (`src/features/spatial/`, `src/features/passport/`, `src/app/`) | ✅ Complete | Solved 710px void & 1500px scroll disconnect per `ux-prompt.md`, docked timeline, progressive passport, 342 tests green |
+| **Phase 11** | **Unified 2D/3D Flight Deck & 3D Lab Consolidation** (`src/features/spatial/`, `src/app/`) | ✅ Complete | Teamwork multi-agent victory confirmed: docked 2D inspector, full-width Dual View, stable toolbar, 3D Moon/Lab unified, 404 tests green |
 
 ---
 
 ## 2. Test Suite & Architecture Invariants
 
-- **Total Passing Tests:** 340 across 68 test files (`bun test`)
+- **Total Passing Tests:** 404 across 78 test files (`bun test`)
 - **TypeScript Static Errors:** 0 (verified in root and `server/` with `tsc --noEmit`)
-- **Vite Production Bundle:** Built cleanly in 539ms (`bun run build`)
+- **Vite Production Bundle:** Built cleanly in 604ms (`bun run build`)
 - **Package Manager Rule:** Strictly `bun` (no npm)
 - **Domain Purity:** `src/domain/` has zero React/DOM/Node/framework imports (enforced by `domainBoundaries.test.ts`)
 - **File-Size Hard Ceilings Compliance:**
-  - UI Components: All $\le 199$ lines (`LunarGlobe3D.tsx` at 199L, `SpatialWorkspace.tsx` at 193L, `MissionDossierModal.tsx` at 190L, `CustomTargetStudioModal.tsx` at 194L, `CustomTargetCompareCard.tsx` at 119L)
-  - Pure Domain / Utils: All $\le 260$ lines (`missionDossierModel.ts` at 259L, `customTargetModel.ts` at 210L, `dossierMarkdownFormatter.ts` at 155L, `targetComparison.ts` at 136L, `customTargetStorage.ts` at 113L)
+  - UI Components: All $\le 195$ lines (`SouthPoleMap.tsx` at 194L, `SpatialWorkspace.tsx` at 191L, `MissionDossierModal.tsx` at 190L, `DockedMapInspector.tsx` at 178L, `GlobeFlightDeckHudOverlay.tsx` at 173L, `LunarGlobe3D.tsx` at 162L, `SpatialToolbar.tsx` at 151L, `CameraPresetSelector.tsx` at 136L, `App.tsx` at 125L, `SpatialViewport.tsx` at 119L, `PassportHorizonSummary.tsx` at 86L, `PointPassport.tsx` at 40L)
+  - Pure Domain / Utils: All $\le 260$ lines (`missionDossierModel.ts` at 259L, `customTargetModel.ts` at 210L, `dossierMarkdownFormatter.ts` at 155L, `targetComparison.ts` at 136L, `horizonSummaryModel.ts` at 51L)
   - Server Modules / Services: All $\le 65$ lines
   - Controllers / Route Handlers: All $\le 45$ lines (`dossierRoutes.ts` at 43L)
   - Schemas / Validation: All $\le 26$ lines (`dossierSchema.ts` at 26L)
@@ -51,6 +53,37 @@
 ---
 
 ## 3. Active Work Log
+
+### Phase 11: Unified 2D/3D Flight Deck & 3D Lab Consolidation (COMPLETED)
+- [x] **R1 (Non-Occluding Docked Inspector):** Replaced legacy floating cards (`CustomPointCard`, `VolatileProspectingCard`) with a docked, non-intrusive bottom drawer (`DockedMapInspector.tsx`), preserving complete visibility of the central South Pole disc ($83^\circ\text{S}–90^\circ\text{S}$), graticule, and candidate sites. Relocated map scale and scientific legend to eliminate corner collision.
+- [x] **R2 (Full-Width Dual View Expansion & Point Passport Docking):** Expanded Dual View across the full 12-column grid (`col-span-12`), providing equal $\approx 50/50$ division ($\approx 750\text{px}$ per panel) and eliminating squished viewports. Replaced static column with an accessible slide-over Point Passport drawer toggle pill.
+- [x] **R3 (Stable, Predictable SpatialToolbar):** Restructured `SpatialToolbar` into 5 fixed visual slots with a compact ($\approx 125\text{px}$) 8-preset camera dropdown menu (`CameraPresetSelector.tsx`), ensuring zero row wrapping, zero button jumps, and zero layout shift across 2D Map, Dual View, and 3D Moon transitions.
+- [x] **R4 (Complete Unification of 3D Moon & 3D Lab):** Consolidated standalone 3D Lab capabilities (Astronaut Visor EVA, Rover Driving HUD with WASD controls, Tactical Overhead Nadir HUD, and 360° circular Flyover tour) directly into the primary `LunarGlobe3D` flight deck via `GlobeFlightDeckHudOverlay.tsx`. Cleanly aliased `/scenario/3d-lab` route to `/spatial` and converted header link to a direct `🪐 3D Moon` flight deck trigger.
+- [x] **Adversarial Gate Clearance:** Independent Victory Auditor verified all acceptance criteria and officially issued **`VICTORY CONFIRMED`**.
+- [x] 404 tests pass with 0 errors across 78 test files (`bun test`).
+- [x] 0 TypeScript compiler errors (`tsc --noEmit`).
+- [x] Clean production bundle built in 604ms (`bun run build`).
+
+### Phase 10: Homepage Flight Deck UX Architecture (COMPLETED)
+- [x] Conducted aerospace-grade UX overhaul of the homepage (`/explore` view) following the **Principal Product Design Audit** principles in `ux-prompt.md`.
+- [x] Solved the **710px dead space black void** in the left column beneath the 2D map / 3D globe viewport.
+- [x] Eliminated the **1,500px distance disconnect** between the Time Explorer simulation controls (`▶ Play`, scrubber) and lunar illumination feedback (satisfying Fitts's Law, Jakob's Law, and Gestalt proximity).
+- [x] Docked `<TimeExplorer />` directly underneath the 2D/3D viewport inside the left column (`SpatialWorkspace.tsx`, 160L), so hitting `▶ Play` animates the Moon and scrubber simultaneously in the user's direct field of view.
+- [x] Implemented pure model `src/features/passport/model/horizonSummaryModel.ts` (51L) and unit tests in `src/features/passport/__tests__/horizonSummaryModel.test.ts` following TDD RED-GREEN cycle.
+- [x] Built compact progressive disclosure component `PassportHorizonSummary.tsx` (86L) displaying Sun and Earth $\Delta\text{Horizon}$ clearance metrics with a one-click transition button to the dedicated 360° Horizon Radar view (`/horizon`).
+- [x] Streamlined `PointPassport.tsx` (40L) replacing duplicate 500px chart, achieving balanced vertical height symmetry (~760px) between left and right columns.
+- [x] Streamlined `src/app/App.tsx` (112L) by removing orphaned bottom timeline and connecting `onNavigateHorizon`.
+- [x] Verified full browser visual rendering and simulation via `agent-browser`:
+  - `flightdeck-balanced-layout.png`: Upper flight deck with 2D map and streamlined PointPassport.
+  - `flightdeck-lower-docked.png`: Docked Time Explorer directly beneath the viewport.
+  - `flightdeck-bottom-alignment.png`: Perfect vertical height equilibrium between left and right columns.
+  - `flightdeck-bottom-ribbon.png`: Seamless transition to Candidate Sites ribbon and footer without dead void.
+  - `horizon-radar-navigated.png`: Verified one-click transition from Passport summary to 360° Horizon Radar tab.
+  - `3d-moon-docked-timeline.png` & `3d-moon-docked-timeline-scroll.png`: 3D Moon Globe with NASA SVS hypsometry and docked timeline.
+  - `simulation-running.png`: Real-time continuous simulation playback animating Moon lighting and scrubber in unison.
+- [x] 342 tests pass with 0 errors across 69 test files (`bun test`).
+- [x] 0 TypeScript compiler errors (`tsc --noEmit`).
+- [x] Clean production bundle built in 619ms (`bun run build`).
 
 ### Phase 9: Executive Mission Dossier Exporter (COMPLETED)
 - [x] Implemented pure domain module `src/domain/dossier/missionDossierModel.ts` (259L) synthesizing site geodesy, topocentric solar grazing angles, DSN RF link budget, LEND/Diviner ISRU yield, and rover traversal into a unified mission briefing model.

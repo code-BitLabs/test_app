@@ -3,24 +3,22 @@ import { ExternalLink, ShieldCheck } from 'lucide-react';
 import { PassportSiteHeader } from '@/features/passport/components/summary/PassportSiteHeader';
 import { PassportSunSection } from '@/features/passport/components/summary/PassportSunSection';
 import { PassportEarthSection } from '@/features/passport/components/summary/PassportEarthSection';
-import { LocalSkyDiagram } from '@/features/passport/components/local-sky/LocalSkyDiagram';
+import { PassportHorizonSummary } from '@/features/passport/components/summary/PassportHorizonSummary';
 
-interface PointPassportProps {
+export interface PointPassportProps {
   /** App-level navigation: opening the Method & Provenance tab is not scenario state. */
   onOpenMethodDetails: () => void;
+  /** App-level navigation: transition to dedicated 360° Horizon Radar tab. */
+  onNavigateHorizon?: () => void;
 }
 
-export function PointPassport({ onOpenMethodDetails }: PointPassportProps) {
+export function PointPassport({ onOpenMethodDetails, onNavigateHorizon }: PointPassportProps) {
   return (
     <div className="flex flex-col gap-3.5 bg-[var(--lm-color-surface-raised)]/40 border border-[var(--lm-color-border-subtle)] rounded-[var(--lm-radius-md)] p-4 sm:p-5 w-full min-w-0">
       <PassportSiteHeader />
       <PassportSunSection />
       <PassportEarthSection />
-
-      {/* Local Sky Cross-Section Diagram */}
-      <section>
-        <LocalSkyDiagram />
-      </section>
+      <PassportHorizonSummary onNavigateHorizon={onNavigateHorizon} />
 
       {/* Provenance and Verification Footer Strip */}
       <div className="pt-2 border-t border-[var(--lm-color-border-subtle)] flex items-center justify-between text-xs text-[var(--lm-color-text-muted)] font-mono">
