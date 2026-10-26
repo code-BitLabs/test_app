@@ -11,5 +11,8 @@ coverage/
 .playwright-cli/
 .agents/
 .claude/
-skills-lock.json
+# Unignore project source target folders (Rust/Cargo gitignore patterns sometimes ignore target/)
+!src/**/target/
+!src/domain/target/
+!src/features/spatial/target/
 
