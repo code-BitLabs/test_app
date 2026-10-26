@@ -1,0 +1,18 @@
+{
+  "name": "@luna/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot run src/index.ts",
+    "start": "bun run src/index.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@nextrush/adapter-bun": "^1.1.0",
+    "@nextrush/body-parser": "^4.1.0",
+    "@nextrush/core": "^4.1.0",
+    "@nextrush/cors": "^4.0.1",
+    "@nextrush/router": "^4.1.0"
+  }
+}
