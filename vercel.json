@@ -2,30 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/api/:match*",
+      "destination": "/api/:match*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
-  "redirects": [
-    {
-      "source": "/api/:match*",
-      "destination": "/server/src/:match*",
-      "permanent": false
-    }
-  ],
-  "functions": {
-    "server/**/*.ts": {
-      "runtime": "bun",
-      "maxDuration": 30,
-      "memory": 1024,
-      "regions": ["iad1"]
-    }
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  },
   "cleanUrls": true,
   "trailingSlash": false
 }

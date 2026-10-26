@@ -20,8 +20,8 @@ export interface MissionServerClientConfig {
 }
 
 const DEFAULT_CONFIG: MissionServerClientConfig = {
-  baseUrl: 'http://localhost:3001/api',
-  timeoutMs: 1500,
+  baseUrl: typeof window !== 'undefined' ? '/api' : 'http://localhost:3001/api',
+  timeoutMs: 3000,
 };
 
 export class MissionServerClient {

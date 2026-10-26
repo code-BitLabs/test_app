@@ -29,8 +29,8 @@ export interface DossierApiResponse {
   provenance: DossierProvenance;
 }
 
-const DEFAULT_BASE_URL = 'http://localhost:3001/api';
-const TIMEOUT_MS = 2000;
+const DEFAULT_BASE_URL = typeof window !== 'undefined' ? '/api' : 'http://localhost:3001/api';
+const TIMEOUT_MS = 3000;
 
 export async function requestMissionDossier(
   input: DossierInput,
