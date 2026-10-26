@@ -8,6 +8,8 @@ import { CustomPointCard } from '@/features/spatial/components/cards/CustomPoint
 import { VectorTelemetryPopover } from '@/features/spatial/components/panels/VectorTelemetryPopover';
 import type { MapHoverPreview } from '@/features/spatial/map/components/MapCanvas';
 import type { CustomPointAnalysis } from '@/features/spatial/map/model/mapPointAnalysis';
+import type { ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
+import { VolatileProspectingCard } from '@/features/spatial/components/cards/VolatileProspectingCard';
 
 export interface MapOverlayCardsProps {
   /** Hover as tracked by the site layer; the telemetry HUD yields to any hover. */
@@ -17,6 +19,7 @@ export interface MapOverlayCardsProps {
   /** Geodesic distance of the selected site from 90.0°S. */
   distanceFromPoleKm: number;
   customPoint: { coord: SelenographicCoordinate; analysis: CustomPointAnalysis } | null;
+  scientificMapMode?: ScientificMapLayerMode;
   onSelectNearest: (site: CandidateSite) => void;
   onClearCustomPoint: () => void;
   onCloseVectorPopover: () => void;
@@ -33,6 +36,7 @@ export function MapOverlayCards({
   activeVectorPopover,
   distanceFromPoleKm,
   customPoint,
+  scientificMapMode,
   onSelectNearest,
   onClearCustomPoint,
   onCloseVectorPopover,
@@ -51,6 +55,17 @@ export function MapOverlayCards({
         distanceFromPoleKm={distanceFromPoleKm}
         visible={!activeVectorPopover && !customPoint && !hoveredSite}
       />
+
+      {/* Volatile Water-Ice Prospecting Card on Active Multi-Spectral Mode */}
+      {(scientificMapMode === 'volatiles' || scientificMapMode === 'temperature') && (
+        <div className="hidden sm:block absolute top-12 left-3 z-20 max-w-[280px]">
+          <VolatileProspectingCard
+            latDeg={customPoint ? customPoint.coord.latitudeDeg : selectedSite.coordinates.latitudeDeg}
+            lonDeg={customPoint ? customPoint.coord.longitudeDeg : selectedSite.coordinates.longitudeDeg}
+            siteName={customPoint ? `Point (${customPoint.coord.latitudeDeg.toFixed(2)}°, ${customPoint.coord.longitudeDeg.toFixed(2)}°)` : selectedSite.name}
+          />
+        </div>
+      )}
 
       {/* Hover Preview Card for Unselected Candidate (Panel 2 in Storyboard) */}
       {hoverPreview && <HoverCandidateCard site={hoverPreview.site} celestial={hoverPreview.celestial} />}

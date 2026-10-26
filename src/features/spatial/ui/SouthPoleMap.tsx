@@ -137,6 +137,7 @@ export function SouthPoleMap({
         hoverPreview={hoverPreview}
         activeVectorPopover={activeVectorPopover}
         distanceFromPoleKm={distanceFromPoleKm}
+        scientificMapMode={preferences.scientificMapMode}
         customPoint={
           customInspectPoint && customPointData
             ? { coord: customInspectPoint, analysis: customPointData }

@@ -13,7 +13,15 @@ export type CameraPreset = 'nadir' | 'oblique' | 'overhead' | 'horizon' | 'site'
 
 export type SpatialLayer = 'grid' | 'shadowRegions' | 'craters' | 'vectors';
 
-export type ScientificMapLayerMode = 'none' | 'topography' | 'hillshade' | 'slope' | 'geology' | 'illumination';
+export type ScientificMapLayerMode =
+  | 'none'
+  | 'topography'
+  | 'hillshade'
+  | 'slope'
+  | 'geology'
+  | 'illumination'
+  | 'volatiles'
+  | 'temperature';
 
 export interface SpatialPreferences {
   showGrid: boolean;

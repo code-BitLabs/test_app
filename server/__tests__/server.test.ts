@@ -143,6 +143,45 @@ test('NextRush Server: POST /api/traversal/plan rejects invalid latitude coordin
   assert.ok(Array.isArray(data.issues));
 });
 
+test('NextRush Server: POST /api/volatiles/prospect evaluates hydrogen wt% and Diviner temp', async () => {
+  const req = new Request('http://localhost:3001/api/volatiles/prospect', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      latDeg: -89.68,
+      lonDeg: 125.0,
+    }),
+  });
+
+  const res = await handler(req);
+  assert.equal(res.status, 200);
+
+  const body = await res.json();
+  assert.equal(body.success, true);
+  assert.ok(body.data !== undefined);
+  assert.equal(body.data.isPsr, true);
+  assert.ok(body.data.divinerTempKelvin < 110);
+  assert.ok(body.data.hydrogenWeightPct > 0.1);
+  assert.ok(body.data.isruFeasibilityScore > 0);
+});
+
+test('NextRush Server: POST /api/volatiles/prospect rejects invalid coordinates with 400', async () => {
+  const req = new Request('http://localhost:3001/api/volatiles/prospect', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      latDeg: 10.0, // Invalid: outside south pole
+      lonDeg: 0,
+    }),
+  });
+
+  const res = await handler(req);
+  assert.equal(res.status, 400);
+
+  const data = await res.json();
+  assert.equal(data.error, 'Invalid volatile prospecting payload');
+});
+
 test('NextRush Server: handles 404 for unknown endpoints gracefully', async () => {
   const req = new Request('http://localhost:3001/api/unknown-endpoint', { method: 'GET' });
   const res = await handler(req);

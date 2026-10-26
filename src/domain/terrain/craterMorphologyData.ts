@@ -85,7 +85,7 @@ export const LOLA_POLAR_CRATER_MORPHOLOGIES: CraterMorphologyDatum[] = [
     rimElevationMeters: 2980,
     floorElevationMeters: 1200,
     innerWallSlopeDeg: 15.0,
-    isDeepPsr: true,
+    isDeepPsr: false,
   },
   {
     id: 'amundsen',

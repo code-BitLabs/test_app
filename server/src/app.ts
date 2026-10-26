@@ -8,6 +8,7 @@ import { createHealthRouter } from '@server/routes/healthRoutes';
 import { createEphemerisRouter } from '@server/routes/ephemerisRoutes';
 import { createTelecomRouter } from '@server/routes/telecomRoutes';
 import { traversalRouter } from '@server/routes/traversalRoutes';
+import { volatileRouter } from '@server/routes/volatileRoutes';
 
 export function createServerApp() {
   const app = createApp();
@@ -33,6 +34,7 @@ export function createServerApp() {
   apiRouter.mount('/ephemeris', ephemerisRouter);
   apiRouter.mount('/telecom', telecomRouter);
   apiRouter.mount('/traversal', traversalRouter);
+  apiRouter.mount('/volatiles', volatileRouter);
 
   app.route('/api', apiRouter);
 

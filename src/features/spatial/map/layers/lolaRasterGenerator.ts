@@ -6,6 +6,9 @@ import {
   getGeologyUnitRgb,
   getIlluminationRgb,
 } from '@/features/spatial/globe/terrain/lolaSouthPoleDemSampler';
+import { getVolatilesRgb, getTemperatureRgb } from '@/domain/volatiles/volatileColorMaps';
+import { evaluateLendNeutronFlux } from '@/domain/volatiles/lendNeutronModel';
+import { evaluateDivinerTemperature } from '@/domain/volatiles/divinerThermalModel';
 import { ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 
 const RASTER_CACHE = new Map<ScientificMapLayerMode, string>();
@@ -85,6 +88,16 @@ export function generateScientificMapRasterUrl(
         case 'illumination':
           rgb = getIlluminationRgb(sample.annualIlluminationPct, sample.isPermanentlyShadowed);
           break;
+        case 'volatiles': {
+          const neutron = evaluateLendNeutronFlux(coord.latitudeDeg, coord.longitudeDeg);
+          rgb = getVolatilesRgb(neutron.hydrogenWeightPct);
+          break;
+        }
+        case 'temperature': {
+          const thermal = evaluateDivinerTemperature(coord.latitudeDeg, coord.longitudeDeg);
+          rgb = getTemperatureRgb(thermal.tempKelvin);
+          break;
+        }
         default:
           rgb = [40, 50, 70];
       }

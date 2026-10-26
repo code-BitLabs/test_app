@@ -49,3 +49,18 @@ test('Mission Server Client: computes traversal plan via fallback when backend i
   assert.ok(plan.totalDistanceKm > 0);
   assert.ok(plan.batteryMarginPct >= 0);
 });
+
+test('Mission Server Client: computes volatile prospect via fallback when backend is unreachable', async () => {
+  const client = missionServerClient.withBaseUrl('http://127.0.0.1:59999/api');
+
+  const prospect = await client.getVolatileProspect({
+    latDeg: -89.68,
+    lonDeg: 125.0,
+  });
+
+  assert.equal(prospect.source, 'local_analytical_fallback');
+  assert.equal(prospect.isPsr, true);
+  assert.ok(prospect.divinerTempKelvin < 110);
+  assert.ok(prospect.hydrogenWeightPct > 0.1);
+  assert.ok(prospect.isruFeasibilityScore > 0);
+});

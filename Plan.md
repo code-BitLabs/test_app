@@ -243,12 +243,17 @@ gantt
   - Live NextRush backend endpoint `POST /api/traversal/plan` with resilient client fallback.
   - 267 green tests across 52 test files.
 
-### Immediate Next Actions (Phase 3):
-1. **Volatile Water-Ice Prospecting & Multi-Spectral Overlays**:
-   - Implement spatial layers for LRO LEND epithermal neutron suppression flux (hydrogen wt%).
-   - LRO Diviner cryogenic isotherms ($<110\text{ K}$ permanent cold traps vs $>200\text{ K}$ illuminated zones).
-   - In-Situ Resource Utilization (ISRU) yield calculator ($kg\text{ H}_2\text{O}/m^3\text{ regolith}$).
-2. **Pareto-Optimal Landing Window Solver (Phase 4)**:
+- [x] **Volatiles & Water-Ice Multi-Spectral Overlays (`src/domain/volatiles/`, `server/src/routes/volatileRoutes.ts`, `src/features/spatial/`)**:
+  - LRO LEND epithermal neutron suppression flux and hydrogen wt% modeling.
+  - LRO Diviner surface temperature contours ($<110\text{ K}$ permanent cold traps vs $>200\text{ K}$ illuminated zones).
+  - In-Situ Resource Utilization (ISRU) regolith yield calculator ($kg\text{ H}_2\text{O}/m^3\text{ regolith}$, metric tons/ha).
+  - Multi-spectral false-color raster generation and interactive `VolatileProspectingCard` on map overlay.
+  - NextRush endpoint `POST /api/volatiles/prospect` with offline fallback.
+  - 272 green tests across 53 test files.
+
+### Immediate Next Actions (Phase 4):
+1. **Pareto-Optimal Landing Window Solver**:
    - Multi-year automated solver sweeping 2026–2028 landing dates to score and rank optimal launch windows based on continuous solar power and DTE clearance.
-3. **Astronaut Helmet HUD Surface EVA Mode (Phase 5)**:
+   - Solves for maximum uninterrupted sunlight and positive Earth elevation windows across candidate sites.
+2. **Astronaut Helmet HUD Surface EVA Mode (Phase 5)**:
    - First-person ground perspective with solar glare post-processing and helmet visor telemetry.
