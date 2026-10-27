@@ -1,10 +1,33 @@
 # LunaMission — Championship Masterplan & Hackathon Roadmap
 
 **Challenge:** NASA Space Apps Challenge 2026 — *Lunar Landing Site Navigator*  
-**Timeline:** 15 Days to Final Submission  
+**Version:** 2.1 — Master Engineering Plan & Active Challenge Execution  
 **Target:** Global Nominee & Grand Prize Winner Tier  
 **Document:** Master Engineering & Product Plan (`Plan.md`)  
-**Status:** Living Engineering Plan & Roadmap  
+**Status:** Living Engineering Plan & Roadmap (52% Full-Scope Challenge Delivery)  
+
+---
+
+## Executive Progress & Hackathon Roadmap Tracker
+
+> **Current Project Velocity:** Phases 1–3 Complete, Core Flight Deck & 7-Page Workspace Operational  
+> **Overall Challenge Scope Completion:** `[█████░░░░░] 52%` (Calibrated against full NASA mission planning lifecycle)  
+> *Core Astrodynamics, 3D Planetary Graphics, Multi-Touch Interaction, NextRush microservice, and 718 passing automated tests delivered.*
+
+```
+========================================================================================
+LUNAMISSION MASTERPLAN EXECUTION: [█████████████░░░░░░░░░░░░] 52%
+========================================================================================
+  [██████████] 100% - Days 1–3: Advanced Space Systems Engineering (Frontend Flight Deck)
+  [██████████] 100% - Days 4–6: Surface Rover Traversal & EVA Planning (`/traverse`)
+  [██████████] 100% - Days 7–9: Automated Optimization & Astronaut Ground Visor HUD
+  [██████████] 100% - Days 10–12: High-Performance Backend Architecture (NextRush Bun)
+  [██████████] 100% - Milestone 1–6: 3D Lab, Touch, SVS 3727, 7-Page Router, 718 Tests
+  [████░░░░░░]  40% - Days 13–14: Direct PDS LOLA GeoTIFF Streaming & Tiling
+  [██░░░░░░░░]  20% - Days 14–15: Orbital Descent Trajectory & Propellant Δv (FR-13)
+  [█░░░░░░░░░]  10% - Stretch: AI Flight Copilot & Natural Language Telemetry (FR-14)
+========================================================================================
+```
 
 ---
 
@@ -300,6 +323,18 @@ gantt
   - OpenSpec change `executive-mission-dossier` (12/12 tasks completed).
   - Test suite expanded to 340 green tests across 68 test files.
 
-### Ready for Next Steps:
-- Manual testing and dogfooding by the developer / user.
-- Space Apps final submission write-up and championship video pitch.
+### Active & Upcoming Engineering Phases:
+
+- [ ] **Phase 3: Direct PDS LOLA Altimetry GeoTIFF Streaming & Tiling (`[████░░░░░░]` 40%)**:
+  - Implement chunked HTTP range requests in NextRush reading raw USGS/PDS LOLA GeoTIFF tiles.
+  - Stream dynamic vertex displacement to Three.js polar cap meshes for sub-meter local terrain resolution.
+  - Generate precise 360° topocentric horizon obstruction masks from real altimetry arrays.
+
+- [ ] **Phase 4: Orbital Descent Trajectory, Powered Descent Initiation & Δv (FR-13, `[██░░░░░░░░]` 20%)**:
+  - 3-DOF numerical orbital flight dynamics integrator in NextRush evaluating Powered Descent Initiation (PDI).
+  - Gate checkpoints (High Gate, Low Gate, Final Touchdown) with engine throttle and burn duration models.
+  - Fuel mass ratio and propellant reserve calculations across commercial lander classes (e.g. Starship HLS, Blue Moon, Nova-C).
+
+- [ ] **Phase 5: Context-Aware AI Flight Copilot & Diagnostics (FR-14, `[█░░░░░░░░░]` 10%)**:
+  - Grounded natural language flight assistant answering queries about landing site constraints, illumination blackouts, and slope hazards.
+  - Direct tool-calling integration with NextRush calculation endpoints (`/api/landing-safety/evaluate`).

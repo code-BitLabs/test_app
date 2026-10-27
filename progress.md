@@ -1,11 +1,35 @@
 # LunaMission Engineering Progress & Verification Ledger
 
 **Project:** LunaMission — NASA Space Apps Challenge 2026 (*Lunar Landing Site Navigator*)  
+**Version:** 2.1 — Engineering Progress & Verification Ledger  
 **Runtime:** Bun Monorepo (`workspaces: ["server"]`)  
-**Backend Framework:** NextRush (`@nextrush/core@4.1.0`, `@nextrush/adapter-bun@1.1.0`)  
-**Frontend Framework:** React 19 + Three.js + Tailwind CSS  
-**Testing Harness:** `bun test` (Strict TDD RED-GREEN-REFACTOR cycle)  
+**Backend Framework:** NextRush (`@nextrush/core@4.1.0`, `@nextrush/adapter-bun@1.1.0`) on Bun HTTP (Port 3001)  
+**Frontend Framework:** Vite 8 + React 19 + Three.js + Tailwind CSS  
+**Testing Harness:** `bun test` (718 Passing Automated Tests, Strict TDD & Adversarial Verification)  
 **Living Document:** Updated across all phases to maintain zero drift.
+
+---
+
+## Executive Progress & Subsystem Completion Tracker
+
+> **Mission Engineering Velocity:** Phases 1–18 Delivered, Operations Active  
+> **Challenge Full-Scope Completion:** `[█████░░░░░] 52%` (Calibrated against full NASA mission planning lifecycle)  
+> *Phase 1 (Core Flight Deck) & Phase 2 (7-Page Mission Control Suite) operational. Phase 3 (Deep Altimetry Tiling) & Phase 4 (Descent Trajectory) in active development.*
+
+```
+========================================================================================
+ENGINEERING PROGRESS BREAKDOWN: [█████████████░░░░░░░░░░░░] 52%
+========================================================================================
+  [██████████] 100% - Total Automated Tests: 718 / 718 Passing (0 Flakiness)
+  [██████████] 100% - 5-Tier E2E Integration Suite: 191 Tests Across 10 Spec Suites
+  [██████████] 100% - Client Test Suite: 689 Passing
+  [██████████] 100% - NextRush Server API Suite: 29 Passing
+  [██████████] 100% - 10,000-Cycle Adversarial Interaction Fuzzer: 0 Invariant Failures
+  [██████████] 100% - TypeScript Static Compiler: 0 Errors (tsc --noEmit)
+  [██████████] 100% - Fortune 100 Ceilings: 0 Violations Across 411 Repository Files
+  [██████████] 100% - Vite 8 Production Build Time: 638 ms
+========================================================================================
+```
 
 ---
 
@@ -32,15 +56,25 @@
 | **Phase 9** | **Executive Mission Dossier Exporter** (`src/domain/dossier/`, `server/`, `src/features/dossier/`) | ✅ Complete | Multi-domain synthesis (LOLA+DSN+ISRU+Traverse), NextRush `/api/dossier/generate`, vector PDF print, 340 tests green |
 | **Phase 10** | **Homepage Flight Deck UX Architecture** (`src/features/spatial/`, `src/features/passport/`, `src/app/`) | ✅ Complete | Solved 710px void & 1500px scroll disconnect per `ux-prompt.md`, docked timeline, progressive passport, 342 tests green |
 | **Phase 11** | **Unified 2D/3D Flight Deck & 3D Lab Consolidation** (`src/features/spatial/`, `src/app/`) | ✅ Complete | Teamwork multi-agent victory confirmed: docked 2D inspector, full-width Dual View, stable toolbar, 3D Moon/Lab unified, 404 tests green |
+| **Phase 12** | **Dedicated 3D Planetary Theater Lab Reinstatement** (`/scenario/3d-lab`) | ✅ Complete | Dedicated 50/50 split page, WASD rover simulator with terrain pitch/roll physics, xEMU visor HUD, 8 camera presets, SMAAPass anti-aliasing |
+| **Phase 13** | **NASA Multi-Spectral Cartography & Grazing Sun Physics** (`src/features/spatial/`) | ✅ Complete | NASA SVS 3727 16-color hypsometry, slope hazard classification (>=15° tip-over gating), 0.5°-2.0° grazing solar raytracing, Diviner/LEND volatile textures |
+| **Phase 14** | **7-Page Synchronized Mission Control Router** (`src/app/hooks/useMissionRouter.tsx`) | ✅ Complete | 7 specialized workspaces (`/explore`, `/scenario/3d-lab`, `/compare`, `/horizon`, `/traverse`, `/gallery`, `/methodology`), canonical URLs, global scenario cohesion |
+| **Phase 15** | **NextRush NASA Calculation Microservice** (`server/src/routes/`) | ✅ Complete | `/api/terrain/slope-roughness`, `/api/landing-safety/evaluate` (5-factor safety index), `/api/ephemeris/horizons` (JPL Horizons proxy), `/api/media/search` (NASA Images) |
+| **Phase 16** | **Fortune 100 Line-Ceiling Refactoring** (Entire Repository) | ✅ Complete | Decomposed 13 oversized files into focused modules: UI <= 200L, Domain <= 300L, Hooks <= 150L, Routes <= 120L across all 411 repository files |
+| **Phase 17** | **5-Tier End-to-End Test Suite & 10,000-Cycle Fuzzer** (`tests/e2e/`) | ✅ Complete | 191 E2E tests across 10 spec suites, 10,000-cycle fuzzer, audited 718-test baseline: VICTORY CONFIRMED |
+| **Phase 18** | **Enterprise Documentation Suite v2.1 Upgrade** (`docs/`) | ✅ Complete | Restored all specifications, added visual progress bars, subsystem readiness matrix, and NASA challenge lifecycle tracking across all 7 docs |
 
 ---
 
 ## 2. Test Suite & Architecture Invariants
 
-- **Total Passing Tests:** 404 across 78 test files (`bun test`)
-- **TypeScript Static Errors:** 0 (verified in root and `server/` with `tsc --noEmit`)
-- **Vite Production Bundle:** Built cleanly in 604ms (`bun run build`)
+- **Total Passing Tests:** **718** (689 client tests + 29 server tests) across 104 test files (`bun test`)
+- **5-Tier E2E Test Suite:** **191 tests** across 10 spec suites in `tests/e2e/` (100% passing)
+- **Adversarial Interaction Fuzzer:** **10,000 cycles** with 0 invariant violations
+- **TypeScript Static Errors:** **0** (verified across root and `server/` with `tsc --noEmit`)
+- **Vite Production Bundle:** Built cleanly in **638ms** (`bun run build`)
 - **Package Manager Rule:** Strictly `bun` (no npm)
+- **Fortune 100 Line Ceilings:** 0 violations across all 411 repository files
 - **Domain Purity:** `src/domain/` has zero React/DOM/Node/framework imports (enforced by `domainBoundaries.test.ts`)
 - **File-Size Hard Ceilings Compliance:**
   - UI Components: All $\le 195$ lines (`SouthPoleMap.tsx` at 194L, `SpatialWorkspace.tsx` at 191L, `MissionDossierModal.tsx` at 190L, `DockedMapInspector.tsx` at 178L, `GlobeFlightDeckHudOverlay.tsx` at 173L, `LunarGlobe3D.tsx` at 162L, `SpatialToolbar.tsx` at 151L, `CameraPresetSelector.tsx` at 136L, `App.tsx` at 125L, `SpatialViewport.tsx` at 119L, `PassportHorizonSummary.tsx` at 86L, `PointPassport.tsx` at 40L)

@@ -12,7 +12,7 @@ bun test tests/e2e
 
 ## 2. Methodology & 4-Tier Test Architecture
 
-The suite implements a 4-tier testing hierarchy with a total of **173 tests** across 8 modular test files:
+The suite implements a 4-tier testing hierarchy with a total of **191 tests** across 10 modular test files:
 
 ### Tier 1: Feature Coverage (75 Tests — 5 Tests Per Feature F1..F15)
 - **`tests/e2e/tier1-f1-f5.test.ts` (25 tests, 417 lines)**:
