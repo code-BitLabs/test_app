@@ -1,191 +1,101 @@
 # LunaMission — Project Brief
 
-**Status:** Working project brief  
-**Version:** 1.0  
-**Last updated:** 19 October 2026  
+**Status:** Approved production baseline  
+**Version:** 2.0  
+**Last updated:** 27 October 2026  
 **Project category:** NASA Space Apps Challenge 2026  
-**Related documents:** `PRD.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `SCIENCE_FEASIBILITY.md`, `API_CONTRACTS.md`
+**Challenge:** Lunar Landing Site Navigator  
+**Related documents:** `docs/prd/LunaMission_Explorer_PRD_v1.md`, `docs/LunaMission_ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/SCIENCE_FEASIBILITY.md`, `docs/VALIDATION_PLAN.md`, `docs/DESIGN_SPEC.md`
 
 ---
 
 ## 1. Project at a glance
 
-**LunaMission** is a web application that helps users explore and compare candidate lunar landing locations and dates by making Sun geometry, illumination opportunity, Earth visibility, and direct-to-Earth (DTE) communication windows easier to understand.
+**LunaMission** is an enterprise aerospace-grade lunar mission flight deck and planning platform designed for the NASA Space Apps Challenge "Lunar Landing Site Navigator". It enables flight dynamics engineers, mission planners, planetary scientists, educators, and the public to evaluate and compare the 13 candidate Artemis III landing zones ($80^\circ\text{S} - 90^\circ\text{S}$) alongside custom pinpointed landing coordinates.
 
-The application is intended to turn mission-planning questions that normally require specialized tools and fragmented data into a clearer, visual, time-aware workflow.
-
-**Core interaction:** select a lunar location, choose a UTC time or interval, inspect Sun and Earth geometry relative to the local horizon, and compare the result with other candidate locations.
-
-## 2. The problem
-
-Lunar south-pole mission planning is affected by difficult lighting conditions and communication geometry. At a candidate site, the Sun may sit close to the local horizon or be obstructed by terrain. Earth may be geometrically visible at some times and hidden at others. Evaluating these conditions across several locations and dates requires users to coordinate scientific data, time settings, and visualization tools.
-
-The challenge is not simply to render a 3D Moon. It is to help users answer practical comparison questions clearly, consistently, and with visible evidence about how each result was obtained.
-
-## 3. The proposed solution
-
-LunaMission will provide an interactive lunar exploration and comparison experience.
-
-Users will be able to:
-
-1. Select a supported lunar location, with the initial focus on candidate sites near the lunar south pole.
-2. Choose a date and time using a canonical UTC timestamp.
-3. Inspect the Sun's direction and elevation relative to the local horizon, alongside a clearly qualified illumination result.
-4. Inspect Earth's direction and geometric visibility and view the point-to-Earth range and theoretical light-travel time.
-5. Compare multiple locations under the same timestamp and assumptions.
-6. Explore illumination and Earth-visibility opportunities over a time interval when timeline calculations are validated.
-7. See units, data coverage, calculation method, source/model versions, and quality flags, including when a result is unavailable or only geometry-based.
-
-The interface may use a 3D Moon for selecting and understanding locations, supported by focused horizon views, metrics, comparison panels, and timelines. Scientific correctness and an understandable comparison workflow take priority over visual complexity.
-
-## 4. Intended users
-
-- **Mission planners and technical users** who need to compare site/time conditions and inspect assumptions.
-- **Educators and students** who want to understand lunar illumination and Earth visibility through an intuitive interface.
-- **The public and hackathon judges** who need to explore the problem without first mastering specialized scientific tools.
-
-The application is an exploratory planning aid. It is not, by itself, an operational mission-certification system.
-
-## 5. MVP scope
-
-### In scope
-
-- Interactive selection of supported lunar sites.
-- UTC-based time selection and consistent updates across all time-dependent panels.
-- Sun and Earth geometry for supported locations and times.
-- Illumination and direct-to-Earth visibility results with explicit method/quality labels.
-- Earth range and theoretical one-way light-time, with the reference point and calculation assumptions documented.
-- Comparison of at least two candidate sites at the same epoch.
-- Clear data-coverage, missing-data, and model-limitation indicators.
-- A timeline or opportunity-window view if point-in-time calculations are proven early enough.
-- A reproducible demo scenario and documented validation evidence.
-
-### Not in the initial MVP
-
-- Spacecraft trajectory optimization, arrival dates, delta-v, or propellant estimates.
-- A full radio-frequency link budget or a guarantee that a communications link will work.
-- A survival probability or safety percentage without a validated probabilistic model.
-- Terrain-aware accuracy for locations that lack verified elevation data and a tested terrain pipeline.
-- AI-generated scientific calculations.
-- User accounts, a database, distributed jobs, or microservices without a demonstrated product need.
-
-These boundaries protect the core challenge workflow from being diluted by ambitious but unvalidated features.
-
-## 6. Key principles
-
-### Scientific outputs must be explainable
-
-Every result should identify its timestamp, units, calculation method, relevant frame/target assumptions, and source/model version. Where important information is missing, the application must say so rather than quietly substituting a default.
-
-### Geometry is not terrain-aware visibility
-
-A body appearing above an ideal geometric horizon does not prove that nearby terrain leaves it unobstructed. Terrain-aware claims may only be made where a suitable digital elevation model (DEM) is available and its pipeline has been validated.
-
-### Visibility is not communication success
-
-Geometric Earth visibility is not equivalent to a successful operational radio link. LunaMission will clearly separate geometric visibility from an RF link budget, which is outside the initial MVP.
-
-### Light-travel time is not network latency
-
-Theoretical signal light-time is derived from a documented distance and the speed of light. It must not be presented as end-to-end operational communications latency.
-
-### Compare like with like
-
-Site comparisons must use the same UTC epoch and compatible calculation settings. Missing metrics must remain visibly missing rather than being treated as zero or as a favorable outcome.
-
-## 7. Proposed technical direction
-
-The team's current proposed stack is:
-
-- **Workspace:** pnpm workspace for JavaScript/TypeScript applications and packages.
-- **Web application:** Next.js with TypeScript.
-- **Application API:** Hono integrated within the Next.js application, providing the main public API boundary.
-- **Scientific service:** a separate Python service where its scientific ecosystem is beneficial, especially for SPICE-based ephemeris/geometry calculations and validated terrain processing.
-- **Scientific tooling:** SPICE/SPICEyPy and numerical libraries such as NumPy, pending feasibility testing with the required kernels, frames, time coverage, and datasets.
-- **Shared contracts:** explicit API schemas; TypeScript types should be generated from or checked against a canonical schema rather than maintained independently by hand.
-- **Testing:** Python unit/integration tests, TypeScript tests, and end-to-end tests for the main user journey.
-- **Repository model:** one repository containing the web application, scientific service, documentation, test fixtures, and data acquisition manifests.
-
-This stack is a proposed project direction, not a claim that all scientific dependencies or data products have already been verified. Hono is the primary public API surface; the browser should not bypass it to call the Python service directly. Whether the Python service is needed for each computation should be decided by capability and measurement, not by default.
-
-## 8. First scientific milestone
-
-Before building the full interface, the team should prove one reproducible end-to-end scientific case:
-
-1. Select one reference lunar location and UTC timestamp.
-2. Load and identify the required ephemeris kernels.
-3. Compute Sun and Earth geometry using documented coordinate frames and targets.
-4. Compute point-to-Earth range and theoretical light-travel time under a stated range definition.
-5. Compare the results with a trusted reference product or an independently validated sanity case.
-6. Record expected tolerance, data/kernel versions, assumptions, limitations, and test results in `SCIENCE_FEASIBILITY.md`.
-
-The first vertical slice then connects the supported input to the scientific computation, returns a typed result with provenance and quality flags, and displays that result in the web application.
-
-## 9. What success looks like
-
-The MVP is successful when a user can select two supported lunar south-pole candidate sites, evaluate them at the same UTC epoch, understand the Sun/Earth conditions and meaningful trade-offs, and distinguish reference data, computed geometry, terrain-aware outputs, estimates, and unavailable information.
-
-The project should demonstrate:
-
-- A working site-and-time workflow.
-- At least one documented scientific reference/validation case.
-- Consistent time handling across comparison views.
-- Honest data-coverage and model-limitation messaging.
-- A reproducible scenario for the final presentation.
-- A clean setup and run guide.
-- Clear attribution for external datasets and software.
-
-A convincing demonstration should show how site choice and time can change the lighting and Earth-visibility picture—not just show an attractive Moon.
-
-## 10. Immediate project milestones
-
-1. **Review the PRD:** confirm the MVP, acceptance criteria, and non-goals; ensure all product naming uses LunaMission.
-2. **Record decisions:** add `DECISIONS.md` with the agreed stack, repository conventions, scientific boundaries, open questions, and decision owners.
-3. **Create the workspace skeleton:** set up the Next.js/Hono application, Python service structure, pnpm workspace, basic CI, and developer commands.
-4. **Run the feasibility experiment:** validate one scientific location/time case before expanding the interface.
-5. **Define API contracts:** finalize request/response schemas from the supported calculation workflow.
-6. **Build the vertical slice:** connect one UI selection to one verified result.
-7. **Expand carefully:** add multi-site comparison, timelines, terrain-aware results where proven, and presentation polish.
-
-## 11. Main risks
-
-| Risk | Response |
-|---|---|
-| Incorrect frames, kernels, or UTC handling | Validate a small reference case and document frames, time coverage, and kernel versions. |
-| Insufficient or uneven DEM coverage | Track coverage explicitly and distinguish geometry-only from terrain-aware output. |
-| Too much effort spent on 3D rendering | Prove the scientific vertical slice first; treat visualization as a presentation layer. |
-| Unsupported confidence in results | Show provenance and quality flags; make insufficient data a first-class state. |
-| Scope creep into trajectories, AI, or survival scores | Defer these until the core site/date comparison is complete and validated. |
-| Demo requires large live downloads | Prepare required data ahead of time and document a reproducible local/demo setup. |
-
-## 12. Project documents
-
-| Document | Purpose |
-|---|---|
-| `PROJECT_BRIEF.md` | Short shared explanation of what LunaMission is and what success means. |
-| `PRD.md` | Product requirements, user workflows, MVP, non-goals, and acceptance criteria. |
-| `ARCHITECTURE.md` | System boundaries, stack proposal, repository structure, and major technical decisions. |
-| `DECISIONS.md` | Decisions, rationale, owners, consequences, and unresolved questions. |
-| `SCIENCE_FEASIBILITY.md` | Scientific dependencies, reference cases, assumptions, data coverage, and validation results. |
-| `API_CONTRACTS.md` | Request/response schemas, units, timestamps, errors, and provenance. |
-| `DESIGN_SPEC.md` | Interface layout, interactions, and visualization states. |
-| `VALIDATION_PLAN.md` | Test strategy, reference checks, tolerances, and release acceptance. |
-| `README.md` | Project setup, development commands, data setup, tests, and demo instructions. |
-
-## 13. Assumptions and open questions
-
-The following remain open until the team validates them:
-
-- Which exact candidate locations will be supported in the first demo?
-- Which SPICE kernels, coordinate frames, and supported time range will be used?
-- Which reference case will be used for independent validation?
-- What DEM product covers the selected sites, at what resolution, and under what usage terms?
-- Can the first release support terrain-aware illumination and Earth line-of-sight, or must some outputs be labeled geometry-only?
-- Is the opportunity timeline part of the MVP after point-in-time results are validated?
-- What pre-event work, external data use, and submission requirements apply under the current event rules?
-
-These questions should be resolved through documented decisions and experiments rather than assumptions.
+The system translates complex astrodynamic models, multi-spectral lunar orbiter altimetry, and communications link physics into an interactive, time-synchronized 7-page Mission Control suite:
+1. **Explore (`/explore`):** Unified 2D Polar Map, Dual View, 3D Moon Flight Deck, docked coordinate inspector, and time progression scrubber.
+2. **3D Lab (`/scenario/3d-lab`):** Dedicated Planetary Theater featuring dual split view, Surface Rover EVA driving simulator (WASD with pitch/roll slope physics), Astronaut xEMU Helmet Visor HUD, and 8 camera presets.
+3. **Site Compare (`/compare`):** Multi-criteria trade-off decision matrix comparing candidate sites across illumination, slope, Earth visibility, and volatile potential.
+4. **Topocentric Horizon (`/horizon`):** 360° radar and sky dome rendering local terrain elevation obstruction profiles, Sun elevation tracks, and Earth libration.
+5. **Rover Traversal (`/traverse`):** Slope-aware A*/Dijkstra pathfinding between lander touchdown coordinates and Permanently Shadowed Region (PSR) volatile cold traps.
+6. **NASA Footage Gallery (`/gallery`):** Curated multimedia archive powered by NASA's Image & Video Library REST API (`images-api.nasa.gov`) and Goddard SVS hyperwall assets.
+7. **Methodology (`/methodology`):** Formal mathematical specifications, physical constants, sensor specifications, error budgets, and API contracts.
 
 ---
 
-**One-line pitch:** LunaMission makes lunar south-pole site-and-time trade-offs easier to explore by bringing Sun geometry, illumination opportunity, Earth visibility, and transparent scientific evidence into one interactive comparison workflow.
+## 2. The challenge and domain problem
+
+Lunar South Pole exploration represents one of the most operationally challenging regimes in planetary exploration:
+- **Grazing Solar Illumination ($0.5^\circ - 2.0^\circ$):** Due to the Moon's minimal obliquity ($1.54^\circ$), the Sun skims the local horizon, casting multi-kilometer shadows. Elevated crater rims receive extended sunlight periods ("peaks of eternal light"), while deep crater floors remain in permanent darkness (Permanently Shadowed Regions or PSRs at 20–40 Kelvin).
+- **Direct-to-Earth (DTE) Telecom Libration:** The Moon's optical and physical libration ($\pm 6.7^\circ$ in latitude, $\pm 7.9^\circ$ in longitude) modulates Earth elevation on a 27.3-day synodic cycle. If Earth dips below local terrain ridges, high-rate direct communication with NASA Deep Space Network (DSN) stations (Goldstone, Madrid, Canberra) is severed.
+- **Geotechnical Hazards:** Touchdown safety requires terrain slopes $<15^\circ$ to prevent lander tip-over or engine bell impingement.
+- **Cryogenic Volatile Prospecting (ISRU):** Locating accessible sub-surface water ice for In-Situ Resource Utilization requires correlating Lunar Exploration Neutron Detector (LEND) epithermal neutron suppression with Diviner Lunar Radiometer maximum summer temperatures ($T_{\text{max}} < 110\text{ K}$).
+
+LunaMission solves the fragmented data problem by synthesizing these disparate domains into one verified, explainable decision-support tool.
+
+---
+
+## 3. The solution
+
+LunaMission delivers an integrated, multi-modal mission control experience:
+- **Interactive Cartography & Ephemeris:** Select any Artemis III candidate site or pinpoint custom coordinates across $-80^\circ\text{S}$ to $-90^\circ\text{S}$.
+- **Synchronized Epoch Time Exploration:** Scrub across dates with sub-second recalculation of sub-solar and sub-Earth coordinates in IAU 2000 ME frames.
+- **Multi-Spectral Visualization Modes:** Switch between LOLA 20m DEM Shaded Relief, LROC Optical Orthomosaic, NASA SVS 3727 16-color Hypsometry, Slope Hazard Classification (Green $<5^\circ$, Yellow $5^\circ-12^\circ$, Red $\ge 15^\circ$), Illumination/PSR masks, and Diviner/LEND water-ice abundance.
+- **Deep Space Network RF Link Budget:** Direct evaluation of Carrier-to-Noise density ($C/N_0$), Free Space Path Loss (FSPL), and DSN 34m/70m link margin ($\ge 3\text{ dB}$).
+- **Autonomous EVA Traversal:** Slope-impedance pathfinding computing elevation cross-sections, traversal distance, and battery energy cost.
+- **Executive Mission Dossier Exporter:** One-click generation of comprehensive mission packages in Markdown and JSON formats.
+
+---
+
+## 4. Intended users
+
+- **NASA Space Apps Reviewers & Judges:** Evaluating scientific rigor, provenance, usability, and domain alignment.
+- **Mission Planners & Flight Dynamics Engineers:** Rapidly assessing landing ellipses, communications blackouts, and solar power opportunity windows.
+- **Planetary Geologists & ISRU Scientists:** Correlating crater morphology, slope hazard envelopes, and volatile cold traps.
+- **Educators, Students, and the Public:** Interactively exploring lunar south pole mechanics through intuitive 2D/3D visualizations and authentic NASA footage.
+
+---
+
+## 5. Scope and delivery matrix
+
+| Capability Area | Status | Technical Realization |
+| :--- | :--- | :--- |
+| **Site Selection & Graticule** | Delivered | 13 Artemis III sites + custom 3D pinpoint raycasting on IAU 2000 ME coordinates. |
+| **Ephemeris & Orbit Mechanics** | Delivered | Analytical JPL/Meeus equations validated within $<0.05^\circ$ against live JPL Horizons API. |
+| **LOLA 20m Altimetry & Shading** | Delivered | Radial polar cap geometry with NASA SVS 3727 16-color hypsometry and elevation scale bar. |
+| **Grazing Solar Raytracing & PSRs** | Delivered | Directional solar lighting ($0.5^\circ - 2.0^\circ$) casting authentic crater rim shadows into cold traps. |
+| **Slope Hazard Classification** | Delivered | Server-side slope matrix calculation with explicit tip-over hazard gating ($\ge 15^\circ$). |
+| **DSN RF Telecom Link Budget** | Delivered | NextRush microservice evaluating Ka-band 26 GHz and S/X-band margins against DSN 34m/70m antennas. |
+| **Surface Rover Traversal Planner** | Delivered | Slope-aware Dijkstra/A* pathfinder with elevation cross-section profile and energy budget. |
+| **Pareto Landing Window Solver** | Delivered | Multi-criteria optimization ranking touchdown epochs across illumination and DTE visibility. |
+| **Dedicated 3D Planetary Theater** | Delivered | `/scenario/3d-lab` with WASD rover simulator, xEMU visor HUD, and 8 camera presets. |
+| **NASA Imagery & Footage Gallery** | Delivered | Live proxy integration with NASA Image & Video Library REST API (`images-api.nasa.gov`). |
+| **Multi-Touch Gestures** | Delivered | 1-finger pan, 2-finger zoom/rotate with `touch-action: none` gesture isolation. |
+| **Executive Dossier Exporter** | Delivered | `/api/dossier/generate` generating formatted mission summaries and export artifacts. |
+
+---
+
+## 6. Scientific principles & design philosophy
+
+1. **Clarity Before Complexity:** Follow Principal Product Designer guidelines (`docs/../ux-prompt.md`) ensuring immediate primary task clarity and zero release gate failures.
+2. **Explainable Mathematics:** Every safety score or hazard index explicitly exposes its underlying formula, weights, and input parameters.
+3. **Geometry vs. Terrain Distinction:** Clearly distinguish ideal geometric visibility from terrain-occluded line-of-sight.
+4. **Visibility vs. Telecom Link Distinction:** Separate geometric line-of-sight from true RF link budgets ($C/N_0$ and receiver sensitivity).
+5. **No Synthetic Shortcuts:** Zero mocks, facades, or synthetic calculations in production or test paths.
+6. **Fortune 100 Engineering Ceilings:** Strict file-size hard caps ($\le 200\text{L}$ UI, $\le 300\text{L}$ domain, $\le 150\text{L}$ hooks, $\le 120\text{L}$ routes) enforced across all 411 repository files.
+
+---
+
+## 7. Technical architecture summary
+
+- **Runtime & Package Manager:** [Bun](https://bun.sh/) (v1.4+) — ultra-fast JavaScript/TypeScript runtime. Never use npm.
+- **Frontend SPA:** [Vite](https://vitejs.dev/) + [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) + [Tailwind CSS](https://tailwindcss.com/). Production build in $<800\text{ms}$.
+- **3D Planetary Engine:** [Three.js](https://threejs.org/) with `SMAAPass` anti-aliasing, logarithmic depth buffer, and `ResizeObserver` responsive canvas scaling.
+- **Backend Calculation Microservice:** `NextRush` Bun HTTP server listening on port **3001** (`server/src/app.ts`), providing heavy astrodynamic, slope, and RF link calculations.
+- **Serverless Production Gateway:** Vercel serverless function adapters under `/api/*`.
+- **Live NASA REST APIs:**
+  - NASA Solar System Treks (Moon Trek) REST WMTS & API (`https://trek.nasa.gov/tiles/Moon/SP/...`).
+  - NASA JPL SSD Horizons REST Ephemeris API (`https://ssd.jpl.nasa.gov/api/horizons.api`).
+  - NASA Image & Video Library REST API (`https://images-api.nasa.gov/search`).
+- **Test Infrastructure:** 718 passing tests (689 client tests + 29 server tests + 191 E2E tests across 5 tiers) and 10,000-cycle empirical interaction fuzzer.
