@@ -1,116 +1,352 @@
-# LunaMission — Design & Interaction Specification
+# LunaMission — Design Specification
 
-**Status:** Approved production design specification  
-**Version:** 2.0  
-**Last updated:** 27 October 2026  
-**Owner:** LunaMission Principal Product Designer & Systems Architect  
-**Related documents:** `docs/../ux-prompt.md`, `docs/../prompt.md`, `docs/PROJECT_BRIEF.md`, `docs/LunaMission_ARCHITECTURE.md`
+| Field | Value |
+|---|---|
+| Document status | Proposed; ready for implementation review |
+| Project | LunaMission |
+| Scope | MVP user experience and interaction behavior |
+| Last updated | 2026-10-19 |
+| Related documents | `PROJECT_BRIEF.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `SCIENCE_FEASIBILITY.md` |
 
----
+## 1. Purpose
 
-## 1. Product design philosophy & release gates
+This document defines the user-facing behavior and information hierarchy for LunaMission. It is a product and interaction specification, not a final brand guide or a claim that the scientific pipeline has already been validated.
 
-LunaMission's user experience is designed under the Principal Product Designer guidelines codified in [`ux-prompt.md`](file:///home/tanzim/project/Project/hakathon/test_app/ux-prompt.md) and [`prompt.md`](file:///home/tanzim/project/Project/hakathon/test_app/prompt.md). Every screen enforces non-negotiable release gates:
-1. **Immediate Task Clarity:** Users can identify the primary mission planning task within 5 seconds of load.
-2. **Discoverable Critical Actions:** Primary mission actions (`Select Site`, `Scrub Epoch`, `Drive Rover`, `Compare Sites`, `Export Dossier`) are visually prominent and unobstructed.
-3. **Deterministic Navigation:** Canonical URLs and synchronized state prevent uncertainty about location or active parameters.
-4. **Forgiving Interactions:** Non-destructive exploration; modals and fullscreen states yield gracefully to the `Escape` key.
-5. **Universal Accessibility:** Fully compliant with **WCAG 2.1 AA** (semantic HTML, complete keyboard navigability, high color contrast, visible focus rings, ARIA landmarks).
-6. **Zero Compounding UX Debt:** Components strictly obey Fortune 100 hard ceilings ($\le 200$ lines per UI component).
+LunaMission helps users explore and compare lunar south-pole candidate locations at a selected UTC time or over a time interval. Its primary outputs concern Sun illumination geometry, Earth visibility geometry, and clearly qualified supporting measurements.
 
----
+The experience must make it easy to answer:
 
-## 2. Multi-page mission control architecture
+1. Where is the candidate point?
+2. At the selected time, where are the Sun and Earth relative to the point's defined local horizon?
+3. How do those conditions change with time?
+4. How do two or more candidate points compare under the same assumptions?
+5. Which results are geometry-only, which are terrain-aware, and what evidence supports them?
 
-The application is structured into an authoritative 7-page suite managed by [`useMissionRouter.tsx`](file:///home/tanzim/project/Project/hakathon/test_app/src/app/hooks/useMissionRouter.tsx):
+## 2. Product principles
 
-```mermaid
-flowchart TD
-    SHELL["Global Mission Header (Site Status, Time Badge, Navigation Tabs)"]
-    SHELL --> P1["/explore: Spatial Flight Deck (2D Map, Dual View, 3D Moon, Docked Inspector, Time Explorer)"]
-    SHELL --> P2["/scenario/3d-lab: 3D Planetary Theater (Split-View, Rover Simulator, Visor HUD)"]
-    SHELL --> P3["/compare: Candidate Site Pareto Trade-Off Matrix & Radar Spider Charts"]
-    SHELL --> P4["/horizon: Topocentric Horizon Radar & Terrain Skyline Mask"]
-    SHELL --> P5["/traverse: Slope-Aware Rover EVA Traversal & Route Planner"]
-    SHELL --> P6["/gallery: NASA Footage & Multimedia Archive (images-api.nasa.gov)"]
-    SHELL --> P7["/methodology: Scientific Models, Formulas, Sensor Specs & Error Budgets"]
+### 2.1 Show evidence and limitations beside the result
+
+A scientific value must never appear without its unit, time basis, and necessary qualification. Users should be able to discover the source data, calculation method, coordinate frame, and coverage status without searching through unrelated documentation.
+
+### 2.2 Keep geometry distinct from operational feasibility
+
+The interface must distinguish:
+- **Geometric visibility** from a verified radio-frequency (RF) communications link.
+- **Geometric illumination** from actual power-system performance.
+- **Geometry-only** results from results that account for verified terrain obstruction.
+- **Theoretical light-time** from operational latency.
+- Candidate comparison metrics from mission approval, survival probability, or fuel/trajectory claims.
+
+Do not present a candidate as “safe,” “survivable,” “communication-ready,” or “optimal” merely because one geometric metric looks favorable.
+
+### 2.3 Compare like with like
+
+Comparison views should synchronize candidate points to the same canonical UTC timestamp or explicitly declare when data windows differ. If candidate points have different terrain-data coverage or different calculation methods, show that difference prominently.
+
+### 2.4 Prefer legibility over dashboard density
+
+The main task is point-and-time exploration. Advanced details belong in expandable panels, not in a wall of unexplained metrics.
+
+### 2.5 No false precision
+
+Display precision must reflect the scientific pipeline's validated accuracy and input resolution. Do not imply sub-degree, sub-second, or terrain-level accuracy unless the underlying method and data support it.
+
+## 3. Primary users and tasks
+
+The MVP should support:
+- A challenge judge or reviewer checking the project’s scientific reasoning.
+- A student or researcher exploring the consequences of changing site or time.
+- A developer or domain expert inspecting calculation provenance and known limitations.
+
+Primary tasks:
+1. Choose a point on or near the lunar south-pole region.
+2. Set a date and time in UTC.
+3. Inspect Sun geometry and Earth visibility geometry for that point.
+4. Explore a time series over a selected interval.
+5. Add candidate points and compare them under the same time basis.
+6. Inspect the method, inputs, source data, and validation status.
+
+## 4. Main information architecture
+
+The MVP contains these areas:
+
+1. **Explorer** — lunar map/globe, candidate-point selection, UTC controls.
+2. **Point details** — selected point summary and current-time measurements.
+3. **Time explorer** — temporal changes and defined event windows.
+4. **Comparison** — side-by-side metrics for two to four selected points.
+5. **Method and provenance** — input data, coordinate/time conventions, source references, calculation method, coverage, validation status, and caveats.
+
+These can be implemented as panels or tabs within one application route. Avoid creating a separate route for every panel unless implementation or accessibility testing shows it is necessary.
+
+## 5. Main workflow
+
+### Step 1 — Open the explorer
+
+The user sees the lunar south-pole context, a concise explanation of what the current view means, and a clear way to select or enter a candidate point.
+
+Initial state:
+- No point is silently preselected as “best.”
+- If a sample point is shown, it is labeled as an example.
+- The UTC control has an explicit default value and explains that all results use UTC.
+- The current dataset and calculation capability are visible (for example, geometry-only).
+
+### Step 2 — Select a candidate point
+
+The user can select a supported predefined candidate or a location from the map. Exact coordinate-entry behavior should only be enabled for coordinate systems the implementation can validate.
+
+On selection, display:
+- A stable point label or ID.
+- Latitude/longitude or the documented lunar coordinate representation.
+- Coordinate frame / body-fixed convention.
+- Selection provenance: predefined source, user-entered, or derived.
+- Data coverage indicators relevant to that point.
+
+Do not label arbitrary selected points as mission-approved sites.
+
+### Step 3 — Select a UTC time
+
+Use a single canonical timestamp for the entire active exploration session. Show it in an unambiguous UTC representation such as `YYYY-MM-DD HH:mm:ss UTC`.
+
+Provide:
+- Direct date/time entry with validation.
+- A time slider or step controls for nearby changes.
+- A visible selected time range when exploring a window.
+- A reset-to-current-view action only if the default reference is clearly defined.
+
+The interface must reject or clearly report invalid times. Do not silently reinterpret local time as UTC.
+
+### Step 4 — Inspect point details
+
+The point-details panel presents the measurements defined in Section 7. Each value must include a unit, concise explanation or tooltip, and calculation/data status.
+
+### Step 5 — Explore temporal behavior
+
+The time explorer displays metrics across a user-selected interval. It must distinguish actual computed samples from interpolated or resampled display points. Detected event windows need an explicit event definition and boundary convention.
+
+### Step 6 — Compare candidate points
+
+The user can add two to four points to a comparison. The selected timestamp/range is synchronized unless the user explicitly chooses a different mode.
+
+Show:
+- The same core metric columns for each point.
+- Units and shared time basis.
+- Per-point data and calculation status.
+- A visual indication when a metric is unavailable or not comparable.
+- Clear method/coverage differences where they affect interpretation.
+
+Never silently compare a terrain-aware result for one point to a geometry-only result for another as though they were equivalent.
+
+### Step 7 — Inspect provenance
+
+Every major result view provides a path to the details for:
+- Calculation method and relevant assumptions.
+- Source datasets and versions/identifiers.
+- Coordinate frames and time conventions.
+- Input coverage and missing-data behavior.
+- Software or algorithm version where available.
+- Validation status, reference result, and tolerance where such checks exist.
+
+“Validated” must mean that a specific test or reference comparison passed. It must not mean merely that the code ran successfully.
+
+## 6. Suggested screen layout
+
+This is a functional layout, not a pixel-perfect mockup.
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│ LunaMission     Explorer   Compare   Method & Data    UTC time  │
+├───────────────────────────────┬─────────────────────────────────┤
+│                               │ Selected point                  │
+│ Lunar south-pole map/globe    │ Point ID / coordinates          │
+│                               │ Coverage + method status        │
+│ Candidate points and filters  ├─────────────────────────────────┤
+│                               │ Sun geometry                    │
+│                               │ elevation / azimuth / status    │
+│                               ├─────────────────────────────────┤
+│                               │ Earth geometry                  │
+│                               │ elevation / visibility / status │
+├───────────────────────────────┴─────────────────────────────────┤
+│ Time explorer: interval, time series, event windows             │
+├─────────────────────────────────────────────────────────────────┤
+│ Provenance / assumptions / limitations (expandable)             │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.1 Global scenario state synchronization
-All 7 views share a single source of truth managed in [`scenarioContext.ts`](file:///home/tanzim/project/Project/hakathon/test_app/src/app/scenario/context/scenarioContext.ts):
-- `selectedSite`: Active Artemis III candidate landing site.
-- `customTarget`: Interactive pinpointed landing coordinates $(\phi, \lambda)$ and elevation.
-- `epochMs` / `epochIsoUtc`: Active UTC simulation timestamp.
-- Switching between tabs guarantees zero state loss: a site or custom target selected on `/explore` remains active on `/compare`, `/horizon`, `/traverse`, and `/scenario/3d-lab`.
+Desktop: map and details can sit side by side, with the time explorer below. On narrow screens, stack these regions and preserve a visible UTC/time-basis label. Do not depend on hover as the only way to access a value definition.
+
+## 7. Metric definitions and display requirements
+
+Exact equations and reference frames must be settled and recorded by the science implementation; this section specifies UI labeling and interpretation.
+
+| Metric | Required display | User-facing qualification |
+|---|---|---|
+| Sun elevation | Angle with unit, normally degrees | State the local horizon/reference definition. If terrain is not modeled, explicitly call it geometry-only or reference-horizon elevation. |
+| Sun azimuth | Angle with unit and documented convention | Define the zero direction and direction of increase. Do not show an unlabeled azimuth. |
+| Illumination state | A defined label and/or fraction, only if supported | Explain whether it is body-level, point-level, geometric, or terrain-aware. Avoid ambiguous “sunlit” if only a simplified geometry test was used. |
+| Earth-center elevation | Angle with unit | Define local horizon and reference frame. Earth-center elevation alone does not prove an Earth communications link. |
+| Geometric Earth visibility | Visible / not visible / indeterminate, if supported | State whether terrain obstruction is included and what “visible” geometrically means. |
+| Range | Distance with unit, if computed | Name the target/reference point and method; do not imply RF link quality. |
+| One-way light-time | Duration with unit, if computed | Label as theoretical propagation time for the stated range/model. |
+| Round-trip light-time | Duration with unit, only when relevant and clearly defined | Do not label as operational latency; processing, routing, and protocol delays are excluded unless modeled. |
+| Event/window duration | Duration with unit | State the event definition, interval boundaries, and sample/resolution constraints. |
+
+For missing, unsupported, or uncertain values, show a textual state such as `Unavailable`, `Not computed`, `Outside supported data coverage`, or `Indeterminate`. Do not replace missing measurements with zero.
+
+## 8. Visual encoding
+
+The visual system must preserve scientific meaning rather than decorate the view.
+
+- Use distinct labels and line styles for the Sun, Earth direction, local reference horizon, and any terrain profile.
+- Include a legend whenever more than one directional object is displayed.
+- Show angle arcs/labels only if the geometry behind them is defined and implemented.
+- A “local horizon” diagram must not look like a terrain silhouette unless it uses a verified terrain profile.
+- If terrain data is available, show the DEM source/resolution and whether the depicted profile was actually sampled for the selected location.
+- Do not use color as the only distinction. Pair color with labels, markers, line styles, or icons that have accessible names.
+- Avoid green/red “good/bad” rankings in the absence of validated mission requirements.
+
+A local-horizon panel should answer: what reference horizon is being used, what direction is being measured, and whether terrain obstruction is included?
+
+## 9. Time-series and event-window behavior
+
+1. The selected UTC timestamp and displayed interval must be visible near the chart.
+2. Axes include units; tooltips include exact sample time and whether the point is sampled, resampled, or interpolated.
+3. Event windows must be defined by named rules, such as a documented visibility threshold crossing, not by an unexplained highlighted region.
+4. Boundary rules must be consistent and testable (for example, whether threshold equality counts as visible).
+5. If computation fails for part of an interval, mark the gap; do not connect lines across missing data as if values were known.
+6. If event detection is based on discrete sampling, disclose the sampling/resolution limitation.
+7. Rapid scrubbing or repeated input must not leave stale data presented as current. Mark pending work, cancel obsolete work where possible, and apply results only when they correspond to the current selection.
+
+## 10. Comparison behavior
+
+- Support two to four candidate points in the MVP.
+- Keep a shared UTC timestamp/range by default.
+- Preserve stable point identity and names while users change the timestamp.
+- Provide a clear remove-point action.
+- Handle mixed coverage explicitly.
+- Do not calculate an aggregate “winner” score in the MVP unless the score has a documented formula, validated weights, user-visible assumptions, and approval criteria. The default is transparent metric-by-metric comparison.
+- Do not imply that the point with the largest single metric is globally optimal.
+
+## 11. Data quality and state model
+
+Every result panel should distinguish the following states where applicable:
+
+- **Ready** — result successfully computed using known inputs.
+- **Computing** — result is pending for the current selection.
+- **Unavailable** — required calculation or data is not provided.
+- **Out of coverage** — the requested point/time is outside the supported domain.
+- **Indeterminate** — inputs or precision do not support a reliable binary answer.
+- **Geometry-only** — no verified terrain obstruction is included.
+- **Terrain-aware** — terrain obstruction was computed using a named, versioned dataset and a declared method.
+- **Validation pending** — result exists but relevant validation has not been completed.
+- **Validation passed/failed** — tied to a named test/reference and recorded tolerance.
+- **Error** — calculation failed; provide a safe, useful message and correlation/detail identifier where appropriate.
+
+Do not conflate `Ready` with `Validated`, and do not treat missing terrain data as evidence of an unobstructed path.
+
+## 12. Error and edge-case behavior
+
+| Situation | Expected behavior |
+|---|---|
+| Invalid UTC entry | Explain the invalid field; retain the last valid selection. |
+| Unsupported coordinate/frame | Prevent calculation or ask for a supported frame/conversion; never silently reinterpret. |
+| Missing kernel/dataset | Show a data-availability error and the missing dependency in the diagnostics/provenance view. |
+| Unsupported time range | Explain the supported time range or data coverage. |
+| Partial time-series failure | Display gaps and report the affected interval; retain valid samples. |
+| Rapid consecutive selections | Keep the UI responsive and ensure an old response cannot overwrite the latest selection. |
+| Mixed terrain coverage in comparison | Mark each point's method/coverage and avoid a false like-for-like impression. |
+| No candidate selected | Explain how to select a point; do not show stale point metrics as if current. |
+| Empty event result | Say no event was detected under the current definition and sampling/coverage; do not claim the event can never occur. |
+| Out-of-range numerical output | Report a computation/validation error rather than clamping silently, unless clamping is part of a declared numerical contract. |
+
+## 13. Accessibility and responsive behavior
+
+- All primary tasks are keyboard-accessible.
+- Controls have visible labels and accessible names; do not rely on placeholder text alone.
+- Charts expose the underlying values in an accessible table or equivalent summary.
+- Every color-encoded state has a text or shape counterpart.
+- Focus order follows the visual and task hierarchy.
+- Dialogs and drawers manage focus and can be closed with the keyboard.
+- Text and labels remain usable at browser zoom and narrow viewport widths.
+- The map/globe must have an alternative point-selection route, such as a supported candidate list or coordinate form.
+- Reduced-motion preferences should be respected for transitions and animated globe controls.
+
+## 14. Performance and interaction expectations
+
+The following are product targets to measure, not claims about current performance:
+
+- Time and point controls give immediate feedback and do not freeze the page while calculations run.
+- For local UI updates, preserve a responsive interaction frame rate on a representative development device.
+- For server-backed calculations, show a pending state promptly and avoid duplicate requests for the same in-flight selection where feasible.
+- Cache only with keys that include every input affecting scientific results, including data/kernel versions and the relevant calculation mode.
+- Use cancellation or stale-result guards for rapidly changing inputs.
+- Avoid shipping large scientific datasets in the browser bundle when they can be served or processed separately.
+- Establish measurable latency budgets after the first representative end-to-end vertical slice; do not invent benchmark claims before measurement.
+
+## 15. Out of scope for the MVP
+
+Unless separately specified and scientifically validated, the UI must not provide:
+- Trajectory optimization, fuel or delta-v estimates.
+- RF link-budget or guaranteed communications availability.
+- Surface power-system production forecasts.
+- Survival probability or a categorical safety score.
+- Terrain-aware claims without verified DEM provenance and validated terrain processing.
+- Autonomous AI judgments that choose a site without transparent evidence.
+- Mission approval or engineering certification.
+
+## 16. Acceptance criteria
+
+The MVP design is ready for implementation when:
+
+- [ ] The primary point-and-time workflow is unambiguous.
+- [ ] All time controls label UTC explicitly.
+- [ ] The chosen coordinate frame/convention is visible wherever coordinates are shown.
+- [ ] Sun and Earth metrics have units and concise definitions.
+- [ ] Geometry-only and terrain-aware modes cannot be mistaken for one another.
+- [ ] A user can compare two to four points at a shared UTC time.
+- [ ] Missing/out-of-coverage/indeterminate values are not shown as zero.
+- [ ] Time-series gaps and event definitions are visible.
+- [ ] Each result has access to its calculation/data provenance.
+- [ ] The interface does not claim operational RF success, survival probability, or site optimality without supporting validated models.
+- [ ] Keyboard navigation and an accessible non-map selection path are available.
+- [ ] Rapid changes cannot display stale results as current.
+
+## 17. Open design decisions
+
+Resolve these during the first vertical slice rather than through speculative mockups:
+
+- Which initial candidate points and coordinate source will be supported?
+- Which base lunar map/globe and projection are feasible for the implementation?
+- Which exact metrics pass the scientific feasibility gate?
+- How should terrain-data coverage be communicated before full terrain-aware calculations are available?
+- Which time-series sampling and event-boundary rules can be defended scientifically?
+- What representative device and latency budgets will be used for performance testing?
+
+A decision should be recorded when it affects scientific meaning, data provenance, cross-view consistency, or user interpretation.
+
 
 ---
 
-## 3. Spatial flight deck specifications (`/explore`)
+## 18. Cognitive ergonomics & psychological laws compliance
 
-### 3.1 Layout & responsive grid
-- **Single View Mode (`map2d` or `globe3d`):** 7/5 responsive column grid pairing the primary spatial canvas (7 columns) with the Point Passport summary (5 columns).
-- **Dual View Mode (`dual`):** Full-width 12-column expansion (`col-span-12`), providing $\approx 780\text{px}$ width per viewport (2D Polar Map on the left, 3D Lunar Globe on the right). Point Passport docks into a slide-over drawer triggered by a persistent pill button.
-- **Docked Time Explorer:** Mounted directly beneath the spatial viewports, eliminating scroll disconnects and positioning playback controls ($\blacktriangleright, \mathbf{II}, \blacktriangleleft, \blacktriangleright$) in direct proximity to lunar lighting changes.
+Following the Principal Product Designer guidelines (`ux-prompt.md`), LunaMission enforces proven cognitive engineering laws:
 
-### 3.2 Non-occluding docked coordinate inspector
-- Replaces legacy floating cards with a docked bottom inspector ([`DockedMapInspector.tsx`](file:///home/tanzim/project/Project/hakathon/test_app/src/features/spatial/map/components/inspector/DockedMapInspector.tsx)).
-- Displays coordinate geometry, local slope gradient, Beckmann surface roughness, illumination status, and volatile prospecting yield.
-- The central South Pole map disc ($80^\circ\text{S} - 90^\circ\text{S}$) remains 100% visible and unoccluded at all times.
-
-### 3.3 Stable 5-slot spatial toolbar
-- [`SpatialToolbar.tsx`](file:///home/tanzim/project/Project/hakathon/test_app/src/features/spatial/components/toolbar/SpatialToolbar.tsx) organizes controls into 5 invariant visual slots:
-  - **Slot 1 (View Mode):** Segmented buttons for `2D Map`, `Dual View`, and `3D Moon`.
-  - **Slot 2 (Camera Presets):** Compact dropdown menu ($\approx 125\text{px}$) supporting all 8 presets (disabled gracefully in 2D mode).
-  - **Slot 3 (Layer Switcher):** Multi-spectral layer toggles (LOLA DEM, LROC, Slope, Illumination, Volatiles).
-  - **Slot 4 (Custom Pinpoint):** Interactive 3D pinpoint raycasting toggle.
-  - **Slot 5 (Actions & Fullscreen):** Flyover tour, Site Compare modal, Mission Dossier export, and Fullscreen toggle.
-- Button groups maintain consistent coordinates with zero wrapping or layout shifting across $1280\text{px}$ to $1920\text{px}$ viewports.
+1. **Fitts's Law:** Critical navigation targets (mode switchers, site beacons, play/pause buttons) have minimum hit-targets of $44\times 44\text{px}$ on touch devices and are pinned to predictable viewport edges.
+2. **Hick-Hyman Law:** Decision overhead is minimized by presenting at most 5 discrete action choices per screen region, avoiding dashboard clutter.
+3. **Miller's 7±2 Working Memory Limit:** Complex telemetry is grouped into 4 distinct semantic clusters: Coordinates & Terrain, Solar Illumination, Earth Communications, and Volatile Abundance.
+4. **Doherty Threshold ($<400\text{ms}$):** All time-scrubbing interactions and ephemeris updates render in $<50\text{ms}$, maintaining direct perceptual engagement without lag.
 
 ---
 
-## 4. Dedicated 3D planetary theater specifications (`/scenario/3d-lab`)
+## 19. Dedicated 3D Planetary Theater Lab & multi-touch specifications
 
-[`Scenario3DLab.tsx`](file:///home/tanzim/project/Project/hakathon/test_app/src/features/spatial/lab/Scenario3DLab.tsx) delivers an unconstrained full-screen planetary theater:
-- **Side-by-Side Split View:** Toggles between full-width globe and $50/50$ split view alongside the comprehensive site inspection panel.
-- **Surface Rover EVA Simulator:**
-  - Activated via `Drive Rover` button or `horizon` preset.
-  - Controls: `W` (Accelerate), `S` (Reverse), `A` (Steer Left), `D` (Steer Right).
-  - Displays real-time pitch, roll, slope inclination, speed, and heading telemetry.
-  - Mast Camera Perspective: Simulates a 25m camera mast for crater rim inspection.
-- **Astronaut xEMU Helmet Visor HUD:**
-  - Activated via `eva` camera preset.
-  - Displays sub-solar heading compass, Earth DTE sightline vector, topocentric elevation, suit consumable telemetry, and simulated oxygen margin.
-- **8 Authoritative Camera Presets:**
-  1. `nadir`: South Pole Overhead ($90^\circ\text{S}$ downward perspective).
-  2. `site`: Oblique $45^\circ$ focus on the selected landing site.
-  3. `horizon`: Ground-level crater rim skyline perspective.
-  4. `eva`: First-person astronaut helmet perspective.
-  5. `earth_align`: Camera boresight aligned directly with Earth's line of sight.
-  6. `orbit360`: Continuous circular flyover orbit around the landing zone.
-  7. `north_look`: Perspective looking north across the lunar limb toward Earth.
-  8. `sunward_terminator`: Camera oriented directly toward the grazing solar illumination vector.
+### 19.1 Dedicated 3D Lab (`/scenario/3d-lab`)
+- **Split Screen Layout:** $50/50$ responsive split between the high-definition Three.js lunar scene and the deep site inspection panel.
+- **Surface Rover EVA Simulator:** WASD keyboard navigation driving a modeled lunar rover across LOLA DEM surface meshes, calculating real-time chassis pitch and roll angles.
+- **Astronaut xEMU Helmet Visor HUD:** First-person heads-up display rendering sub-solar directional compass, Earth sightline vector, suit oxygen reserves, and terrain slope pitch warnings.
+- **8 Camera Presets:** Instant camera transitions to `nadir`, `site`, `horizon`, `eva`, `earth_align`, `orbit360`, `north_look`, and `sunward_terminator`.
 
----
-
-## 5. Touch interaction & gesture specifications
-
-Multi-touch gestures ([`useMapGestures.ts`](file:///home/tanzim/project/Project/hakathon/test_app/src/features/spatial/map/hooks/useMapGestures.ts)) provide native mobile and tablet navigation:
-- **1-Finger Drag / Pan:** Translates the 2D map or rotates the 3D globe with momentum dampening.
-- **2-Finger Centered Pinch-to-Zoom:** Scales the viewport centered on the geometric focal midpoint between touches. Zoom level is clamped strictly within `ZOOM_MIN` ($1.0\times$) and `ZOOM_MAX` ($8.0\times$).
-- **2-Finger Rotate:** Calculates angular delta between touch vectors to orient map azimuth.
-- **Gesture Arbitration (`touch-action: none`):** Explicitly applied to SVG map containers and WebGL canvas elements, preventing document scroll capture and viewport bounce.
-
----
-
-## 6. Psychological laws & cognitive ergonomics
-
-| UX Psychology Law | Design Implementation in LunaMission |
-| :--- | :--- |
-| **Hick's Law** | Reduced choices through progressive disclosure; secondary tools organized in compact dropdown menus. |
-| **Fitts's Law** | All interactive touch/click targets $\ge 44\times 44\text{px}$; frequent controls placed near the visual center. |
-| **Jakob's Law** | Standard aerospace mission control patterns; universal timeline playback icons ($\blacktriangleright, \mathbf{II}, \blacktriangleleft, \blacktriangleright$). |
-| **Miller's Law** | Telemetry and site parameters chunked into 5–9 distinct visual units per inspector panel. |
-| **Doherty Threshold** | Sub-400ms perceived response times; optimistic UI updates; asynchronous calculation offloading. |
-| **Von Restorff Effect** | Visually distinctive styling for primary mission triggers (`Drive Rover`, `Export Dossier`). |
-| **Zeigarnik Effect** | Active custom targets and simulation epochs persist across all page switches. |
-| **Peak-End Rule** | Comprehensive, beautifully formatted summary moments in the Executive Mission Dossier export. |
+### 19.2 Multi-Touch Gesture Handling
+- **1-Finger Pan:** Dragging across the map or globe smoothly rotates the view azimuth and elevation.
+- **2-Finger Pinch / Zoom:** Pinching dynamically adjusts camera orbital distance with smooth damping.
+- **2-Finger Rotate:** Twisting two fingers adjusts polar azimuth orientation.
+- **Gesture Isolation:** Explicit `touch-action: none` applied to all WebGL canvases, preventing accidental browser pull-to-refresh or page scrolling during interaction.
