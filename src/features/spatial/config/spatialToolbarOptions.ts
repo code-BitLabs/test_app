@@ -6,7 +6,7 @@
 
 import {
   Columns, Compass, Crosshair, Eye, Globe as GlobeIcon,
-  Map as MapIcon, ZoomIn, Sparkles, Target, Mountain, type LucideIcon,
+  Map as MapIcon, ZoomIn, Sparkles, Target, Mountain, Radio, RotateCw, Sun, type LucideIcon,
 } from 'lucide-react';
 import { CameraPreset, SpatialLayer } from '@/features/spatial/model/spatialPreferences';
 import { SpatialViewMode } from '@/features/spatial/model/spatialViewMode';
@@ -45,8 +45,16 @@ export const VIEW_MODES: ViewModeOption[] = [
 
 export type CameraPresetId = CameraPreset | 'southPole';
 
+/** 8 Authoritative Camera Presets for the flight deck and 3D Lab */
 export const ALL_CAMERA_PRESET_IDS: readonly CameraPresetId[] = [
-  'global', 'southPole', 'oblique', 'site', 'inspection', 'overhead', 'horizon', 'eva',
+  'southPole',
+  'site',
+  'horizon',
+  'eva',
+  'earth_align',
+  'orbit360',
+  'north_look',
+  'sunward_terminator',
 ] as const;
 
 export interface CameraPresetOption {
@@ -58,16 +66,76 @@ export interface CameraPresetOption {
   iconClassName: string;
 }
 
-/** All 8 flight-grade camera presets for the 3D lunar flight deck and dual view. */
+/** 8 Authoritative flight-grade camera presets */
 export const CAMERA_PRESETS: CameraPresetOption[] = [
   {
-    preset: 'global',
-    id: 'global',
-    label: 'Global',
-    title: 'Global Context: Complete Moon sphere overview',
-    Icon: GlobeIcon,
-    iconClassName: 'w-3 h-3',
+    preset: 'nadir',
+    id: 'southPole',
+    label: 'South Pole',
+    title: 'South Pole Overhead (Nadir): Direct vertical overview of polar region (83°S–90°S)',
+    Icon: Compass,
+    iconClassName: 'w-3 h-3 text-[var(--lm-color-selected-site)]',
   },
+  {
+    preset: 'site',
+    id: 'site',
+    label: 'Site Focus',
+    title: 'Site Focus: Centered on selected Artemis candidate landing zone',
+    Icon: Crosshair,
+    iconClassName: 'w-3 h-3 text-indigo-400',
+  },
+  {
+    preset: 'horizon',
+    id: 'horizon',
+    label: 'Horizon',
+    title: 'Ground Rim Horizon: Perspective view across crater rim horizon',
+    Icon: Mountain,
+    iconClassName: 'w-3 h-3 text-amber-400',
+  },
+  {
+    preset: 'eva',
+    id: 'eva',
+    label: 'EVA Visor',
+    title: 'Astronaut EVA: Ground-level first-person surface EVA visor perspective',
+    Icon: Sparkles,
+    iconClassName: 'w-3 h-3 text-cyan-400',
+  },
+  {
+    preset: 'earth_align',
+    id: 'earth_align',
+    label: 'Earth Align',
+    title: 'Earth Alignment: Direct RF telecom line-of-sight toward Earth hovering on horizon',
+    Icon: Radio,
+    iconClassName: 'w-3 h-3 text-sky-400',
+  },
+  {
+    preset: 'orbit360',
+    id: 'orbit360',
+    label: 'Orbit 360°',
+    title: 'Orbit 360°: Continuous 360-degree circular orbital reconnaissance vantage',
+    Icon: RotateCw,
+    iconClassName: 'w-3 h-3 text-purple-400',
+  },
+  {
+    preset: 'north_look',
+    id: 'north_look',
+    label: 'North Look',
+    title: 'North-Looking: Camera anchored at site oriented toward local North along prime meridian',
+    Icon: Compass,
+    iconClassName: 'w-3 h-3 text-teal-400',
+  },
+  {
+    preset: 'sunward_terminator',
+    id: 'sunward_terminator',
+    label: 'Terminator',
+    title: 'Sunward Terminator: Facing grazing low-elevation solar vector across shadow boundary',
+    Icon: Sun,
+    iconClassName: 'w-3 h-3 text-yellow-400',
+  },
+];
+
+/** Backward-compatible camera preset aliases */
+export const CAMERA_PRESET_ALIASES: CameraPresetOption[] = [
   {
     preset: 'nadir',
     id: 'southPole',
@@ -77,19 +145,19 @@ export const CAMERA_PRESETS: CameraPresetOption[] = [
     iconClassName: 'w-3 h-3 text-[var(--lm-color-selected-site)]',
   },
   {
+    preset: 'global',
+    id: 'global',
+    label: 'Global',
+    title: 'Global Context: Complete Moon sphere overview',
+    Icon: GlobeIcon,
+    iconClassName: 'w-3 h-3',
+  },
+  {
     preset: 'oblique',
     id: 'oblique',
     label: 'Oblique',
     title: 'Oblique Terrain: Perspective view across crater rims and relief',
     Icon: Eye,
-    iconClassName: 'w-3 h-3',
-  },
-  {
-    preset: 'site',
-    id: 'site',
-    label: 'Site Focus',
-    title: 'Focus camera on selected candidate site',
-    Icon: Crosshair,
     iconClassName: 'w-3 h-3',
   },
   {
@@ -108,27 +176,15 @@ export const CAMERA_PRESETS: CameraPresetOption[] = [
     Icon: Target,
     iconClassName: 'w-3 h-3 text-emerald-400',
   },
-  {
-    preset: 'horizon',
-    id: 'horizon',
-    label: 'Horizon',
-    title: 'Ground-Level Horizon: Perspective across crater horizon',
-    Icon: Mountain,
-    iconClassName: 'w-3 h-3 text-amber-400',
-  },
-  {
-    preset: 'eva',
-    id: 'eva',
-    label: 'EVA Visor',
-    title: 'Astronaut Helmet Visor HUD: Ground-level first-person surface EVA perspective',
-    Icon: Sparkles,
-    iconClassName: 'w-3 h-3 text-cyan-400',
-  },
 ];
 
 export function findCameraPresetOption(idOrPreset: CameraPresetId): CameraPresetOption | undefined {
-  const normalized = idOrPreset === 'southPole' ? 'nadir' : idOrPreset;
-  return CAMERA_PRESETS.find((p) => p.preset === normalized || p.id === idOrPreset);
+  if (idOrPreset === 'southPole' || idOrPreset === 'nadir') {
+    return CAMERA_PRESETS[0];
+  }
+  const match = CAMERA_PRESETS.find((p) => p.preset === idOrPreset || p.id === idOrPreset);
+  if (match) return match;
+  return CAMERA_PRESET_ALIASES.find((p) => p.preset === idOrPreset || p.id === idOrPreset);
 }
 
 export interface LayerToggleButton {

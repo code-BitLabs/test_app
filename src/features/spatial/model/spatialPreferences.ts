@@ -9,7 +9,20 @@
  * carrying two names.
  */
 
-export type CameraPreset = 'nadir' | 'oblique' | 'overhead' | 'horizon' | 'site' | 'inspection' | 'global' | 'eva';
+export type CameraPreset =
+  | 'nadir'
+  | 'site'
+  | 'horizon'
+  | 'eva'
+  | 'earth_align'
+  | 'orbit360'
+  | 'north_look'
+  | 'sunward_terminator'
+  // Backward-compatible aliases
+  | 'global'
+  | 'oblique'
+  | 'overhead'
+  | 'inspection';
 
 export type SpatialLayer = 'grid' | 'shadowRegions' | 'craters' | 'vectors' | 'laserTracks';
 

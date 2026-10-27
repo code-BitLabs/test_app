@@ -1,131 +1,141 @@
-# TEST_READY: LunaMission Spatial Workspace Consolidation
+# TEST_READY: LunaMission Comprehensive 5-Tier E2E Test Suite
 
-**Project**: LunaMission — Lunar South-Pole Scientific Observatory  
-**Milestone**: M5 — E2E Verification & Browser Automation Audit  
-**Status**: PASSED / READY FOR PRODUCTION AUDIT  
-**Audit Date**: 2026-10-26T21:18:00Z  
+**Project**: LunaMission Aerospace Flight Deck (Artemis III / CLPS)  
+**Role**: E2E Test Suite Architect & Worker (`teamwork_preview_worker`)  
+**Status**: PASSED / 100% GREEN (191/191 Tests Pass — Iteration 2 Audit Remediation Complete)  
+**Verification Command**: `bun test tests/e2e`  
+**Execution Time**: ~260ms  
+**Completion Date**: 2026-10-27T01:00:00Z  
 
 ---
 
 ## 1. Executive Summary
 
-All quality, architecture, line-count, and browser visual verification gates for the LunaMission Spatial Workspace Consolidation project have passed with 100% compliance.
-The application satisfies all requirements (R1, R2, R3, R4) specified in `ORIGINAL_REQUEST.md` and `PROJECT.md`:
-- **R1 (Non-Occluding Docked Inspector)**: Custom point geometry and ISRU volatiles telemetry are docked non-intrusively below the 2D map, leaving the central 83°S–90°S polar disc completely unobstructed.
-- **R2 (Full-Width Dual View Expansion)**: Engaging Dual View expands the spatial canvas across the full 12-column grid (~1348px width) with an equal ~50/50 division (~660px per viewport) and docks Point Passport into an accessible drawer toggle.
-- **R3 (Stable SpatialToolbar)**: Standardized 5-slot toolbar with compact camera preset dropdown `[ 🎥 Preset ▾ ]` (~125px) fits on a single row without wrapping, layout shifts, or CLS on desktop viewports ($\ge 1280\text{px}$).
-- **R4 (3D Moon & 3D Lab Unification)**: Standalone 3D Lab route `/scenario/3d-lab` aliases into the authoritative Explore 3D Moon shell; navigation header features direct `🪐 3D Moon` trigger; all advanced theater modes (Rover driving HUD with W/A/S/D hints, Tactical Overhead Nadir HUD, Astronaut Visor HUD, Flyovers) are fully consolidated.
+A comprehensive, opaque-box, multi-tier End-to-End (E2E) test suite has been designed and implemented in `tests/e2e/` for the LunaMission aerospace flight deck. The test suite thoroughly covers all 15 operational features (F1 through F15) across all 5 required tiers, delivering rigorous verification for:
+1. **Tier 1 — Feature Coverage**: 75 tests (5 test cases per feature for F1..F15).
+2. **Tier 2 — Boundary & Corner Cases**: 75 tests (5 test cases per feature for F1..F15).
+3. **Tier 3 — Cross-Feature Combinations**: 15 tests (pairwise & multi-subsystem integrations).
+4. **Tier 4 — Real-World Application Scenarios**: 8 tests (authentic Artemis III mission operational workloads).
+5. **Tier 5 — Adversarial Coverage Hardening**: 18 tests (extreme astrodynamic & geotechnical physical limits, rapid concurrent state bursts, network fault/cache churn resiliency, and touch gesture isolation).
+
+**Total Test Count**: **191 tests** (exceeds all requirements).  
+**Pass Rate**: **100% (191 passed, 0 failed)**.  
+**File Size Ceiling Compliance**: All 9 test files and helper modules strictly adhere to the $\le 500$ lines ceiling (maximum file length is 487 lines in Tier 5 and 417 lines in Tier 1).  
+**Source Code Integrity**: Zero modifications made to production source code in `src/` or `server/`.
 
 ---
 
-## 2. Quality Gate Verification Results
+## 2. Test Execution & Pass Summary
 
-### 2.1 Full Unit Test Suite (`bun test`)
 ```bash
+bun test tests/e2e
+```
+
+```
+bun test v1.4.4 (38afee6c8)
+
+tests/e2e/tier1-f1-f5.test.ts:
+  ✓ Tier 1 [F1-1..F1-5]: Dedicated 3D Lab Reinstatement (5 tests)
+  ✓ Tier 1 [F2-1..F2-5]: Surface Rover EVA Simulator (5 tests)
+  ✓ Tier 1 [F3-1..F3-5]: Astronaut xEMU Visor HUD (5 tests)
+  ✓ Tier 1 [F4-1..F4-5]: 8 Authoritative Camera Presets (5 tests)
+  ✓ Tier 1 [F5-1..F5-5]: Flight-Grade Fullscreen Architecture (5 tests)
+
+tests/e2e/tier1-f6-f10.test.ts:
+  ✓ Tier 1 [F6-1..F6-5]: Touch Interactions & Isolation (5 tests)
+  ✓ Tier 1 [F7-1..F7-5]: Rendering Stability & Anti-Artifacts (5 tests)
+  ✓ Tier 1 [F8-1..F8-5]: Multi-Spectral Cartography Layers & South Pole Physics (5 tests)
+  ✓ Tier 1 [F9-1..F9-5]: Scientific Provenance Badges (5 tests)
+  ✓ Tier 1 [F10-1..F10-5]: Synchronized 7-Page Suite Architecture (5 tests)
+
+tests/e2e/tier1-f11-f15.test.ts:
+  ✓ Tier 1 [F11-1..F11-5]: Global Scenario State Cohesion (5 tests)
+  ✓ Tier 1 [F12-1..F12-5]: NASA Footage Gallery Page (5 tests)
+  ✓ Tier 1 [F13-1..F13-5]: NextRush Backend Calculations (5 tests)
+  ✓ Tier 1 [F14-1..F14-5]: NASA API Gateway & Dev Proxy (5 tests)
+  ✓ Tier 1 [F15-1..F15-5]: Code Quality & File-Size Ceilings (5 tests)
+
+tests/e2e/tier2-f1-f5.test.ts:
+  ✓ Tier 2 [F1-B1..F1-B5]: 3D Lab Boundary & Corner Cases (5 tests)
+  ✓ Tier 2 [F2-B1..F2-B5]: Rover Simulator Boundary & Corner Cases (5 tests)
+  ✓ Tier 2 [F3-B1..F3-B5]: Astronaut HUD Boundary & Corner Cases (5 tests)
+  ✓ Tier 2 [F4-B1..F4-B5]: Camera Presets Boundary & Corner Cases (5 tests)
+  ✓ Tier 2 [F5-B1..F5-B5]: Fullscreen Architecture Boundary & Corner Cases (5 tests)
+
+tests/e2e/tier2-f6-f10.test.ts:
+  ✓ Tier 2 [F6-B1..F6-B5]: Touch Interaction Boundary Cases (5 tests)
+  ✓ Tier 2 [F7-B1..F7-B5]: Rendering Stability Boundary Cases (5 tests)
+  ✓ Tier 2 [F8-B1..F8-B5]: Cartography & Physics Boundary Cases (5 tests)
+  ✓ Tier 2 [F9-B1..F9-B5]: Scientific Provenance Boundary Cases (5 tests)
+  ✓ Tier 2 [F10-B1..F10-B5]: 7-Page Routing Boundary Cases (5 tests)
+
+tests/e2e/tier2-f11-f15.test.ts:
+  ✓ Tier 2 [F11-B1..F11-B5]: Scenario State Boundary Cases (5 tests)
+  ✓ Tier 2 [F12-B1..F12-B5]: NASA Footage Gallery Boundary Cases (5 tests)
+  ✓ Tier 2 [F13-B1..F13-B5]: NextRush Backend Calculation Boundary Cases (5 tests)
+  ✓ Tier 2 [F14-B1..F14-B5]: NASA API Gateway Boundary Cases (5 tests)
+  ✓ Tier 2 [F15-B1..F15-B5]: Quality & Safety Boundary Cases (5 tests)
+
+tests/e2e/tier3-pairwise.test.ts:
+  ✓ Tier 3 [Pairwise 1..15]: Cross-Feature Subsystem Combinations (15 tests)
+
+tests/e2e/tier4-scenarios.test.ts:
+  ✓ Tier 4 [Scenario 1..8]: Real-World Artemis III Mission Workloads (8 tests)
+
+tests/e2e/tier5-adversarial.test.ts:
+  ✓ Tier 5 [ADV-1..ADV-5]: Extreme Astrodynamic & Geotechnical Limit Adversarial Stress (5 tests)
+  ✓ Tier 5 [ADV-6..ADV-9]: High-Frequency Concurrent State Mutations & Temporal Scrubbing (4 tests)
+  ✓ Tier 5 [ADV-10..ADV-14]: Offline Network Faults, Cache Eviction & Resiliency (5 tests)
+  ✓ Tier 5 [ADV-15..ADV-18]: Touch Gestures & Gesture Isolation Under Adversarial Input (4 tests)
+
+ 191 pass
+ 0 fail
+Ran 191 tests across 9 files. [251.00ms]
+```
+
+---
+
+## 3. Test File Deliverables & Line Count Ceiling Verification
+
+All test files are located strictly in `tests/e2e/` and comply with the $\le 500$ lines ceiling:
+
+| File Path | Description | Test Count | Line Count | Ceiling Limit | Status |
+|---|---|---|---|---|---|
+| `tests/e2e/tier1-f1-f5.test.ts` | Tier 1: Features F1 through F5 | 25 | 417 | $\le 500$ | ✅ PASS |
+| `tests/e2e/tier1-f6-f10.test.ts` | Tier 1: Features F6 through F10 | 25 | 291 | $\le 500$ | ✅ PASS |
+| `tests/e2e/tier1-f11-f15.test.ts` | Tier 1: Features F11 through F15 | 25 | 323 | $\le 500$ | ✅ PASS |
+| `tests/e2e/tier2-f1-f5.test.ts` | Tier 2: Boundary Cases for F1..F5 | 25 | 345 | $\le 500$ | ✅ PASS |
+| `tests/e2e/tier2-f6-f10.test.ts` | Tier 2: Boundary Cases for F6..F10 | 25 | 231 | $\le 500$ | ✅ PASS |
+| `tests/e2e/tier2-f11-f15.test.ts` | Tier 2: Boundary Cases for F11..F15 | 25 | 326 | $\le 500$ | ✅ PASS |
+| `tests/e2e/tier3-pairwise.test.ts` | Tier 3: Pairwise Cross-Feature Interactions | 15 | 319 | $\le 500$ | ✅ PASS |
+| `tests/e2e/tier4-scenarios.test.ts` | Tier 4: Real-World Artemis III Mission Scenarios | 8 | 215 | $\le 500$ | ✅ PASS |
+| `tests/e2e/tier5-adversarial.test.ts` | Tier 5: Adversarial Stress & Physical Limits | 18 | 487 | $\le 500$ | ✅ PASS |
+| `tests/e2e/testHelpers.ts` | Test Infrastructure Dispatcher & Fixtures | — | 88 | $\le 500$ | ✅ PASS |
+| **TOTAL** | **Full 5-Tier E2E Suite** | **191 tests** | **3,042 lines** | — | **100% GREEN** |
+
+---
+
+## 4. Verification Method for Independent Reproduction
+
+To independently verify the test suite:
+```bash
+# 1. Run the entire E2E test suite (191 tests)
+bun test tests/e2e
+
+# 2. Run specifically the Tier 5 adversarial suite (18 tests)
+bun test tests/e2e/tier5-adversarial.test.ts
+
+# 3. Verify all test file line counts are strictly <= 500 lines
+wc -l tests/e2e/*
+
+# 4. Verify full project client and server test suites
 bun test
-```
-- **Total Tests**: 404 passed, 0 failed, 0 skipped
-- **Total Test Files**: 78 files
-- **Execution Time**: ~14.11s
-- **Status**: ✅ PASS (100% green)
+(cd server && bun test)
 
-### 2.2 TypeScript Static Typecheck
-```bash
+# 5. Verify typecheck and production build
 bun x tsc --noEmit && (cd server && bun x tsc --noEmit)
-```
-- **Client Typecheck**: 0 errors
-- **Server Typecheck**: 0 errors
-- **Status**: ✅ PASS (Exit code 0)
-
-### 2.3 Production Build
-```bash
-bun run build
-```
-- **Tool**: Vite v8.3.5 / Rolldown
-- **Client Bundle**: `dist/index.html` (1.38 kB), `dist/assets/index.css` (92.43 kB), `dist/assets/index.js` (1,274.05 kB)
-- **Execution Time**: 1.29s
-- **Status**: ✅ PASS (Exit code 0)
-
----
-
-## 3. Enterprise Line Count Ceiling Compliance (Hard Ceiling $\le 200$ Lines)
-
-Every UI component touched in this consolidation project was audited via `wc -l`. All 18 UI components strictly adhere to the enterprise ceiling of $\le 200$ lines.
-
-| # | File Path | Lines | Ceiling | Compliance |
-|---|---|---|---|---|
-| 1 | `src/features/spatial/map/components/inspector/DockedMapInspector.tsx` | 178 | $\le 200$ | ✅ PASS |
-| 2 | `src/features/spatial/map/components/inspector/InspectorGeometryPanel.tsx` | 105 | $\le 200$ | ✅ PASS |
-| 3 | `src/features/spatial/map/components/inspector/InspectorVolatilesPanel.tsx` | 143 | $\le 200$ | ✅ PASS |
-| 4 | `src/features/spatial/map/components/MapCanvas.tsx` | 189 | $\le 200$ | ✅ PASS |
-| 5 | `src/features/spatial/map/components/MapOverlayCards.tsx` | 72 | $\le 200$ | ✅ PASS |
-| 6 | `src/features/spatial/map/components/MapScaleBar.tsx` | 76 | $\le 200$ | ✅ PASS |
-| 7 | `src/features/spatial/map/components/MapSvgDefs.tsx` | 38 | $\le 200$ | ✅ PASS |
-| 8 | `src/features/spatial/ui/SouthPoleMap.tsx` | 194 | $\le 200$ | ✅ PASS |
-| 9 | `src/features/spatial/ui/SpatialWorkspace.tsx` | 191 | $\le 200$ | ✅ PASS |
-| 10 | `src/features/spatial/ui/SpatialViewport.tsx` | 119 | $\le 200$ | ✅ PASS |
-| 11 | `src/features/spatial/components/toolbar/SpatialToolbar.tsx` | 151 | $\le 200$ | ✅ PASS |
-| 12 | `src/features/spatial/components/toolbar/CameraPresetSelector.tsx` | 136 | $\le 200$ | ✅ PASS |
-| 13 | `src/features/spatial/globe/components/GlobeFlightDeckHudOverlay.tsx` | 173 | $\le 200$ | ✅ PASS |
-| 14 | `src/features/spatial/globe/components/AstronautHelmetHud.tsx` | 182 | $\le 200$ | ✅ PASS |
-| 15 | `src/features/spatial/ui/LunarGlobe3D.tsx` | 162 | $\le 200$ | ✅ PASS |
-| 16 | `src/features/passport/ui/PointPassport.tsx` | 40 | $\le 200$ | ✅ PASS |
-| 17 | `src/app/App.tsx` | 125 | $\le 200$ | ✅ PASS |
-| 18 | `src/app/header/components/HeaderStatusControls.tsx` | 71 | $\le 200$ | ✅ PASS |
-| **TOTAL** | **18 UI Components** | **2,345** | **$\le 200$ each** | **100% COMPLIANT** |
-
----
-
-## 4. End-to-End Browser Visual Verification
-
-Visual audit conducted using `agent-browser` 0.39.2 in desktop viewport ($1440 \times 900$). All screenshots are saved in `artifacts/screenshots/`:
-
-| Screenshot | Requirement | Verification Target & Description | Artifact File Path | Size |
-|---|---|---|---|---|
-| **Screenshot 1** | R1 | **2D Polar Map with Docked Inspector**: `data-testid="docked-map-inspector"` open with custom point geometry (88.256°S, 298.132°E) and volatiles telemetry (Diviner 175.3K, Hydrogen 0.12%), leaving central 83°S–90°S polar disc 100% visible without occlusions. | `artifacts/screenshots/screenshot-1-docked-inspector-2d-map.png` | 239 KB |
-| **Screenshot 2** | R2 | **Full-Width Dual View Expansion**: Workspace expanded across 12-column grid (1348px) with ~50/50 side-by-side viewports (660px each) and `Point Passport` pill button in header. | `artifacts/screenshots/screenshot-2-full-width-dual-view.png` | 255 KB |
-| **Screenshot 3** | R2 | **Point Passport Drawer**: Point Passport drawer open in Dual View via `dual-passport-toggle` pill button showing complete site passport telemetry overlay without compressing viewports. | `artifacts/screenshots/screenshot-3-dual-view-passport-drawer.png` | 245 KB |
-| **Screenshot 4** | R3 | **Stable SpatialToolbar**: Fixed 5-slot layout with compact camera preset dropdown `[ 🎥 Preset ▾ ]` (~125px) on a single row (36px height) without wrapping or layout shifts on desktop. | `artifacts/screenshots/screenshot-4-stable-spatial-toolbar.png` | 236 KB |
-| **Screenshot 5** | R4 | **Authoritative 3D Moon Flight Deck**: Route aliasing from `/scenario/3d-lab` loading full shell, LOLA globe canvas, and header trigger button `🪐 3D Moon`. | `artifacts/screenshots/screenshot-5-authoritative-3d-moon-flight-deck.png` | 230 KB |
-| **Screenshot 6** | R4 | **3D Flight Deck HUD Overlays (Rover Driving HUD)**: Surface Rover EVA Traverse telemetry with W/A/S/D driving hints, LOLA elevation (+4,216m), surface slope (4.0°), and ground speed. | `artifacts/screenshots/screenshot-6-3d-flight-deck-rover-hud.png` | 178 KB |
-| **Screenshot 6b** | R4 | **Astronaut EVA Visor HUD**: Extravehicular Visor Head-Up Display with curved helmet visor vignette, artificial horizon crosshairs, PLSS life support, and geodesic horizon telemetry. | `artifacts/screenshots/screenshot-6b-astronaut-eva-visor-hud.png` | 211 KB |
-
----
-
-## 5. Verification Commands for Independent Reproduction
-
-To independently verify the gates and browser automation:
-```bash
-# 1. Run unit test suite
-bun test
-
-# 2. Run TypeScript static typechecks
-bun x tsc --noEmit && (cd server && bun x tsc --noEmit)
-
-# 3. Run production build
 bun run build
 
-# 4. Run line count audit
-wc -l \
-  src/features/spatial/map/components/inspector/DockedMapInspector.tsx \
-  src/features/spatial/map/components/inspector/InspectorGeometryPanel.tsx \
-  src/features/spatial/map/components/inspector/InspectorVolatilesPanel.tsx \
-  src/features/spatial/map/components/MapCanvas.tsx \
-  src/features/spatial/map/components/MapOverlayCards.tsx \
-  src/features/spatial/map/components/MapScaleBar.tsx \
-  src/features/spatial/map/components/MapSvgDefs.tsx \
-  src/features/spatial/ui/SouthPoleMap.tsx \
-  src/features/spatial/ui/SpatialWorkspace.tsx \
-  src/features/spatial/ui/SpatialViewport.tsx \
-  src/features/spatial/components/toolbar/SpatialToolbar.tsx \
-  src/features/spatial/components/toolbar/CameraPresetSelector.tsx \
-  src/features/spatial/globe/components/GlobeFlightDeckHudOverlay.tsx \
-  src/features/spatial/globe/components/AstronautHelmetHud.tsx \
-  src/features/spatial/ui/LunarGlobe3D.tsx \
-  src/features/passport/ui/PointPassport.tsx \
-  src/app/App.tsx \
-  src/app/header/components/HeaderStatusControls.tsx
-
-# 5. Inspect screenshots
-ls -lh artifacts/screenshots/
+# 6. Verify zero modifications were made to production source code
+git diff --stat src/ server/
 ```

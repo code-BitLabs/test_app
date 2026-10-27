@@ -1,21 +1,43 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Compass } from 'lucide-react';
 import { useScenario, useScenarioModel, useScenarioCommands } from '@/app/scenario/context/scenarioContext';
 import { CANDIDATE_SITES, getSiteById } from '@/domain/sites/catalog';
+import { CandidateSite } from '@/domain/sites/candidateSite';
 import { generateTopocentricHorizonRadar } from '@/domain/celestial/horizonProfile';
 import { HorizonRadarSvgPlot } from '../components/HorizonRadarSvgPlot';
 import { HorizonClearanceTelemetry } from '../components/HorizonClearanceTelemetry';
 import { DsnLinkBudgetCard } from '../components/DsnLinkBudgetCard';
 
 export function TopocentricHorizonView() {
-  const { selectedSiteId, calculationMode } = useScenario();
+  const { selectedSiteId, calculationMode, customTarget } = useScenario();
   const { epochMs } = useScenarioModel();
   const { selectSite } = useScenarioCommands();
 
-  const currentSite = useMemo(
-    () => getSiteById(selectedSiteId) ?? CANDIDATE_SITES[0],
-    [selectedSiteId],
-  );
+  const [inspectCustom, setInspectCustom] = useState(false);
+
+  const customSite = useMemo<CandidateSite | null>(() => {
+    if (!customTarget) return null;
+    return {
+      id: customTarget.id,
+      code: 'TARGET',
+      name: customTarget.name,
+      description: `Custom target at ${customTarget.latitudeDeg.toFixed(2)}°S, ${customTarget.longitudeDeg.toFixed(2)}°E`,
+      coordinates: {
+        latitudeDeg: customTarget.latitudeDeg,
+        longitudeDeg: customTarget.longitudeDeg,
+        elevationKm: customTarget.elevationKm,
+        elevationMeters: customTarget.elevationKm * 1000,
+      },
+      category: 'polar-benchmark',
+      priority: 'high',
+      isCustom: true,
+    } as unknown as CandidateSite;
+  }, [customTarget]);
+
+  const currentSite = useMemo(() => {
+    if (inspectCustom && customSite) return customSite;
+    return getSiteById(selectedSiteId) ?? CANDIDATE_SITES[0];
+  }, [inspectCustom, customSite, selectedSiteId]);
 
   const radar = useMemo(
     () => generateTopocentricHorizonRadar(currentSite, new Date(epochMs), calculationMode),
@@ -53,10 +75,22 @@ export function TopocentricHorizonView() {
           </label>
           <select
             id="radar-site-select"
-            value={selectedSiteId}
-            onChange={(e) => selectSite(e.target.value)}
+            value={inspectCustom && customTarget ? `custom-${customTarget.id}` : selectedSiteId}
+            onChange={(e) => {
+              if (e.target.value.startsWith('custom-')) {
+                setInspectCustom(true);
+              } else {
+                setInspectCustom(false);
+                selectSite(e.target.value);
+              }
+            }}
             className="px-3 py-1.5 text-xs font-mono bg-[var(--lm-color-canvas)] border border-[var(--lm-color-border)] rounded-[var(--lm-radius-sm)] text-[var(--lm-color-text-primary)] focus:outline-none focus:border-cyan-500"
           >
+            {customTarget && (
+              <option value={`custom-${customTarget.id}`}>
+                🎯 Custom Target: {customTarget.name}
+              </option>
+            )}
             {CANDIDATE_SITES.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.code} • {s.name}

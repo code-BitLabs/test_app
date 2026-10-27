@@ -11,6 +11,7 @@ import {
   comparisonSitesToAdd,
   removeComparisonSite,
 } from '@/features/comparison/model/comparisonColumns';
+import { generateComparisonCsv } from '@/features/comparison/model/generateComparisonCsv';
 import { ComparisonHeader } from '@/features/comparison/components/ComparisonHeader';
 import { ComparisonTableHead } from '@/features/comparison/components/table/ComparisonTableHead';
 import { ComparisonLocationRows, ComparisonTerrainRows } from '@/features/comparison/components/rows/ComparisonSiteRows';
@@ -28,7 +29,7 @@ interface ComparisonMatrixProps {
 type CatalogCategoryTab = 'artemis-2024' | 'polar-benchmark' | 'clps' | 'historic' | 'all';
 
 export function ComparisonMatrix({ onSelectSiteForExplore }: ComparisonMatrixProps) {
-  const { calculationMode } = useScenario();
+  const { calculationMode, customTarget } = useScenario();
   const { epochMs, epochIsoUtc } = useScenarioModel();
   const { setEpoch } = useScenarioCommands();
 
@@ -57,26 +58,8 @@ export function ComparisonMatrix({ onSelectSiteForExplore }: ComparisonMatrixPro
     setSelectedSiteIds((prev) => removeComparisonSite(prev, siteId));
   }, []);
 
-  // Quick export of matrix data as scientific CSV
   const handleExportCsv = useCallback(() => {
-    const headers = ['Code', 'Name', 'Category', 'Latitude', 'Longitude', 'Elevation_m', 'Sun_Elev_deg', 'Earth_Elev_deg', 'DTE_Status'];
-    const rows = columns.map((col) => {
-      const sunElev = col.conditions.sunElevationDeg.kind === 'available' ? col.conditions.sunElevationDeg.value : 0;
-      const earthElev = col.conditions.earthElevationDeg.kind === 'available' ? col.conditions.earthElevationDeg.value : 0;
-      return [
-        col.site.code,
-        `"${col.site.name}"`,
-        col.site.category ?? 'polar',
-        col.site.coordinates.latitudeDeg,
-        col.site.coordinates.longitudeDeg,
-        col.site.coordinates.elevationMeters,
-        sunElev,
-        earthElev,
-        col.conditions.earthVisibility,
-      ].join(',');
-    });
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const encodedUri = encodeURI(generateComparisonCsv(columns));
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
     link.setAttribute('download', `LunaMission_Landing_Site_Matrix_${epochIsoUtc.slice(0, 10)}.csv`);
@@ -134,14 +117,37 @@ export function ComparisonMatrix({ onSelectSiteForExplore }: ComparisonMatrixPro
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={handleExportCsv}
-          className="flex items-center gap-1.5 px-3 py-1 text-xs font-mono rounded-[var(--lm-radius-sm)] bg-cyan-950/40 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-900/60 transition-colors cursor-pointer"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Export CSV Matrix</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {customTarget && (
+            <button
+              type="button"
+              onClick={() => onSelectSiteForExplore({
+                id: customTarget.id,
+                code: 'TARGET',
+                name: customTarget.name,
+                coordinates: {
+                  latitudeDeg: customTarget.latitudeDeg,
+                  longitudeDeg: customTarget.longitudeDeg,
+                  elevationMeters: customTarget.elevationKm * 1000,
+                },
+                category: 'polar-benchmark',
+                priority: 'high',
+              } as unknown as CandidateSite)}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono rounded-[var(--lm-radius-sm)] bg-amber-950/40 border border-amber-500/40 text-amber-300 hover:bg-amber-900/60 transition-colors cursor-pointer"
+            >
+              <span>🎯 Target: {customTarget.name}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="flex items-center gap-1.5 px-3 py-1 text-xs font-mono rounded-[var(--lm-radius-sm)] bg-cyan-950/40 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-900/60 transition-colors cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV Matrix</span>
+          </button>
+        </div>
       </div>
 
       {/* 3. Main Comparison Grid: Table on Left + Spider Chart on Right */}

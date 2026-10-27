@@ -1,5 +1,6 @@
 import { CalculationMode } from '@/domain/celestial/calculationMode';
 import { DEFAULT_SITE_ID, getSiteById } from '@/domain/sites/catalog';
+import { CustomLandingTarget } from '@/domain/target/customTargetModel';
 
 /**
  * Canonical scenario instant: 2026-10-21T12:00:00Z, the Artemis III target epoch
@@ -10,21 +11,24 @@ export const DEFAULT_EPOCH_MS = Date.UTC(2026, 9, 21, 12, 0, 0);
 
 export const DEFAULT_CALCULATION_MODE: CalculationMode = 'terrain-aware';
 
-/** The three inputs every scientific view in the application derives from. */
+/** The canonical inputs every scientific view in the application derives from. */
 export interface ScenarioState {
   selectedSiteId: string;
+  customTarget: CustomLandingTarget | null;
   epochMs: number;
   calculationMode: CalculationMode;
 }
 
 export type ScenarioAction =
   | { type: 'site/selected'; siteId: string }
+  | { type: 'customTarget/changed'; target: CustomLandingTarget | null }
   | { type: 'epoch/changed'; epochMs: number }
   | { type: 'calculationMode/changed'; mode: CalculationMode };
 
 export function createInitialScenarioState(): ScenarioState {
   return {
     selectedSiteId: DEFAULT_SITE_ID,
+    customTarget: null,
     epochMs: DEFAULT_EPOCH_MS,
     calculationMode: DEFAULT_CALCULATION_MODE,
   };
@@ -36,6 +40,8 @@ export function scenarioReducer(state: ScenarioState, action: ScenarioAction): S
     case 'site/selected':
       if (!getSiteById(action.siteId)) return state;
       return state.selectedSiteId === action.siteId ? state : { ...state, selectedSiteId: action.siteId };
+    case 'customTarget/changed':
+      return state.customTarget === action.target ? state : { ...state, customTarget: action.target };
     case 'epoch/changed':
       if (!Number.isFinite(action.epochMs)) return state;
       return state.epochMs === action.epochMs ? state : { ...state, epochMs: action.epochMs };

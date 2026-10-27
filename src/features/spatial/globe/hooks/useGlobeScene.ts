@@ -1,59 +1,15 @@
-import { RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { CandidateSite } from '@/domain/sites/candidateSite';
-import { CameraPreset, ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
-import {
-  SelenographicLatitudeDeg,
-  SelenographicLongitudeDeg,
-} from '@/domain/coordinates/frames';
-import { GlobeStatus } from '@/features/spatial/globe/scene/globeStatus';
-import {
-  GlobeSceneHandle,
-  GlobeDiagnosticsMetrics,
-  buildGlobeScene,
-} from '@/features/spatial/globe/scene/globeSceneBuilder';
-import { RoverTelemetry } from '@/features/spatial/globe/interaction/lunarRoverController';
+import { CameraPreset } from '@/features/spatial/model/spatialPreferences';
 import { useGlobeSceneSync } from '@/features/spatial/globe/hooks/useGlobeSceneSync';
 import { useGlobePinpointClick } from '@/features/spatial/globe/hooks/useGlobePinpointClick';
-import { CustomLandingTarget } from '@/domain/target/customTargetModel';
+import { useGlobeSceneMount } from '@/features/spatial/globe/hooks/useGlobeSceneMount';
+import {
+  UseGlobeSceneInput,
+  UseGlobeSceneResult,
+} from '@/features/spatial/globe/hooks/globeSceneTypes';
 
-/** Color mosaic and DEM relief both settle before the loading overlay lifts. */
-const SURFACE_TEXTURE_COUNT = 2;
-
-export interface UseGlobeSceneInput {
-  selectedSite: CandidateSite;
-  onSelectSite: (site: CandidateSite) => void;
-  subSolarLatDeg: SelenographicLatitudeDeg;
-  subSolarLonDeg: SelenographicLongitudeDeg;
-  subEarthLatDeg: SelenographicLatitudeDeg;
-  subEarthLonDeg: SelenographicLongitudeDeg;
-  /** Topocentric elevation unwrapped from its availability wrapper; null is unknown. */
-  earthElevationDeg: number | null;
-  showGrid: boolean;
-  showShadowRegions: boolean;
-  showVectors: boolean;
-  showLaserTracks?: boolean;
-  showTerrain?: boolean;
-  showMarkers?: boolean;
-  showLabels?: boolean;
-  scientificMapMode?: ScientificMapLayerMode;
-  cameraPreset: CameraPreset;
-  onCameraPresetChange: (preset: CameraPreset) => void;
-  isFlyoverActive?: boolean;
-  onFlyoverChange?: (active: boolean) => void;
-  onRoverTelemetryChange?: (telemetry: RoverTelemetry | null) => void;
-  isRoverActive?: boolean;
-  customTarget?: CustomLandingTarget | null;
-  isPinpointMode?: boolean;
-  onPinpointCustomTarget?: (target: CustomLandingTarget) => void;
-}
-
-export interface UseGlobeSceneResult {
-  containerRef: RefObject<HTMLDivElement | null>;
-  status: GlobeStatus;
-  hoveredSite: CandidateSite | null;
-  applyCameraPreset: (preset: CameraPreset, site: CandidateSite) => void;
-  getDiagnostics: () => GlobeDiagnosticsMetrics | null;
-}
+export type { UseGlobeSceneInput, UseGlobeSceneResult };
 
 /**
  * Owns the WebGL globe's lifetime: it builds the scene once against the mount
@@ -86,15 +42,19 @@ export function useGlobeScene(input: UseGlobeSceneInput): UseGlobeSceneResult {
   } = input;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const handleRef = useRef<GlobeSceneHandle | null>(null);
   const selectedSiteIdRef = useRef(selectedSite.id);
   const pickSiteRef = useRef<(site: CandidateSite) => void>(() => {});
   const handledPresetRef = useRef<CameraPreset>(cameraPreset);
   const onFlyoverChangeRef = useRef(onFlyoverChange);
   onFlyoverChangeRef.current = onFlyoverChange;
 
-  const [status, setStatus] = useState<GlobeStatus>({ kind: 'loading' });
-  const [hoveredSite, setHoveredSite] = useState<CandidateSite | null>(null);
+  const { handleRef, status, hoveredSite } = useGlobeSceneMount({
+    containerRef,
+    selectedSiteIdRef,
+    pickSiteRef,
+    onFlyoverChangeRef,
+    onRoverTelemetryChange: input.onRoverTelemetryChange,
+  });
 
   const moveCameraToPreset = useCallback((preset: CameraPreset, site: CandidateSite) => {
     if (handleRef.current?.setCameraPreset) {
@@ -102,13 +62,8 @@ export function useGlobeScene(input: UseGlobeSceneInput): UseGlobeSceneResult {
     } else {
       handleRef.current?.transitioner.moveTo(preset, site);
     }
-  }, []);
+  }, [handleRef]);
 
-  /**
-   * The workspace owns the selected preset, so a click here records the choice
-   * and then moves the camera. Presets chosen elsewhere arrive through the
-   * `cameraPreset` value and are handled by the effect below.
-   */
   const applyCameraPreset = useCallback(
     (preset: CameraPreset, site: CandidateSite) => {
       handledPresetRef.current = preset;
@@ -122,45 +77,7 @@ export function useGlobeScene(input: UseGlobeSceneInput): UseGlobeSceneResult {
     if (isFlyoverActive !== undefined) {
       handleRef.current?.setFlyover?.(isFlyoverActive);
     }
-  }, [isFlyoverActive]);
-
-  // Mount-only by design: rebuilding WebGL on a parent re-render is the cost this hook exists to avoid.
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    let settledTextures = 0;
-    const handle = buildGlobeScene({
-      container,
-      initialSelectedSiteId: selectedSiteIdRef.current,
-      onSurfaceSettled: () => {
-        settledTextures += 1;
-        if (settledTextures >= SURFACE_TEXTURE_COUNT) setStatus({ kind: 'ready' });
-      },
-      onSurfaceUnavailable: (message) => setStatus({ kind: 'textureError', message }),
-      onHoverChange: setHoveredSite,
-      isSiteSelected: (siteId) => siteId === selectedSiteIdRef.current,
-      onPick: (site) => pickSiteRef.current(site),
-      onFlyoverInterrupted: () => onFlyoverChangeRef.current?.(false),
-      onRoverTelemetryChange: input.onRoverTelemetryChange,
-    });
-    if (!handle) {
-      setStatus({ kind: 'unsupported' });
-      return;
-    }
-
-    handleRef.current = handle;
-    if (typeof window !== 'undefined') {
-      (window as any).__globeHandle = handle;
-    }
-    return () => {
-      handleRef.current = null;
-      if (typeof window !== 'undefined') {
-        delete (window as any).__globeHandle;
-      }
-      handle.dispose();
-    };
-  }, []);
+  }, [isFlyoverActive, handleRef]);
 
   useEffect(() => {
     pickSiteRef.current = (site) => {
@@ -215,7 +132,7 @@ export function useGlobeScene(input: UseGlobeSceneInput): UseGlobeSceneResult {
 
   const getDiagnostics = useCallback(() => {
     return handleRef.current?.getDiagnostics?.() ?? null;
-  }, []);
+  }, [handleRef]);
 
   return { containerRef, status, hoveredSite, applyCameraPreset, getDiagnostics };
 }

@@ -130,3 +130,44 @@ test('Camera presets: horizon preset frames eye-level perspective toward terrain
   assert.ok(pose.upVector.dot(targetNormal) > 0.95, 'Up vector is aligned with surface normal');
 });
 
+test('Camera presets: eva preset frames first-person astronaut eye-level perspective', () => {
+  const pose = cameraPoseForPreset('eva', testSite);
+  assert.ok(pose.camPos.length() > 1.45, 'EVA camera is placed on lunar surface');
+  const dist = pose.camPos.distanceTo(pose.lookTarget);
+  assert.ok(dist < 0.1, `EVA camera look distance should be intimate, was ${dist}`);
+  assert.ok(Math.abs(pose.upVector.length() - 1.0) < 1e-4);
+});
+
+test('Camera presets: earth_align preset frames direct RF line-of-sight toward Earth on horizon', () => {
+  const pose = cameraPoseForPreset('earth_align', testSite);
+  assert.ok(pose.camPos.length() > 1.45, 'Earth align camera is above surface');
+  const lookDir = pose.lookTarget.clone().sub(pose.camPos).normalize();
+  // Earth is positioned roughly toward +Z (prime meridian) at lunar South Pole
+  assert.ok(lookDir.z > 0.3, 'Look direction points toward Earth hemisphere (+Z)');
+  assert.ok(Math.abs(pose.upVector.length() - 1.0) < 1e-4);
+});
+
+test('Camera presets: orbit360 preset frames circular orbital overview around candidate', () => {
+  const pose = cameraPoseForPreset('orbit360', testSite);
+  const alt = pose.camPos.distanceTo(pose.lookTarget);
+  assert.ok(alt > 0.5 && alt < 1.0, `Orbit 360 altitude should be ~0.7, was ${alt}`);
+  assert.ok(Math.abs(pose.upVector.length() - 1.0) < 1e-4);
+});
+
+test('Camera presets: north_look preset frames view looking true North along prime meridian', () => {
+  const pose = cameraPoseForPreset('north_look', testSite);
+  assert.ok(pose.camPos.length() > 1.45, 'North look camera sits above surface');
+  const dist = pose.camPos.distanceTo(pose.lookTarget);
+  assert.ok(dist < 0.15, `North look target distance should be compact, was ${dist}`);
+  assert.ok(Math.abs(pose.upVector.length() - 1.0) < 1e-4);
+});
+
+test('Camera presets: sunward_terminator preset frames grazing low-sun terminator line', () => {
+  const pose = cameraPoseForPreset('sunward_terminator', testSite);
+  assert.ok(pose.camPos.length() > 1.45, 'Sunward camera sits above surface');
+  const dist = pose.camPos.distanceTo(pose.lookTarget);
+  assert.ok(dist < 0.15, `Sunward terminator target distance should be compact, was ${dist}`);
+  assert.ok(Math.abs(pose.upVector.length() - 1.0) < 1e-4);
+});
+
+

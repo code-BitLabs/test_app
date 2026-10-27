@@ -1,17 +1,11 @@
 import React, { type CSSProperties, type RefObject } from 'react';
 import type { CandidateSite } from '@/domain/sites/candidateSite';
 import type { ResultAvailability } from '@/domain/celestial/availability';
-import {
-  DEFAULT_PROJECTION_CONFIG,
-  type CustomPointCelestialAngles,
-  type ProjectedPoint,
-} from '@/domain/coordinates/projection';
-import type {
-  TopocentricAzimuthDeg,
-  TopocentricElevationDeg,
-} from '@/domain/coordinates/frames';
+import { DEFAULT_PROJECTION_CONFIG, type CustomPointCelestialAngles, type ProjectedPoint } from '@/domain/coordinates/projection';
+import type { TopocentricAzimuthDeg, TopocentricElevationDeg } from '@/domain/coordinates/frames';
 import { ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 import { ScientificRasterLayer } from '@/features/spatial/map/layers/ScientificRasterLayer';
+import { ElevationContourLayer } from '@/features/spatial/map/layers/ElevationContourLayer';
 import { ScientificMapLegend } from '@/features/spatial/map/components/ScientificMapLegend';
 import { MapGridLayer } from '@/features/spatial/map/layers/MapGridLayer';
 import { CraterLayer } from '@/features/spatial/map/layers/CraterLayer';
@@ -52,6 +46,10 @@ export interface MapGestureHandlers {
   onMouseLeave: () => void;
   onWheel: (event: React.WheelEvent) => void;
   onClick: (event: React.MouseEvent) => void;
+  onTouchStart?: (event: React.TouchEvent) => void;
+  onTouchMove?: (event: React.TouchEvent) => void;
+  onTouchEnd?: (event: React.TouchEvent) => void;
+  onTouchCancel?: (event: React.TouchEvent) => void;
 }
 
 export interface MapCanvasProps {
@@ -100,13 +98,13 @@ export function MapCanvas({
 }: MapCanvasProps) {
   return (
     <div
-      className="relative w-full h-full flex-1 flex items-center justify-center cursor-grab active:cursor-grabbing overflow-hidden min-h-0"
-      onMouseDown={gestures.onMouseDown}
-      onMouseMove={gestures.onMouseMove}
-      onMouseUp={gestures.onMouseUp}
-      onMouseLeave={gestures.onMouseLeave}
-      onWheel={gestures.onWheel}
-      onClick={gestures.onClick}
+      className="relative w-full h-full flex-1 flex items-center justify-center cursor-grab active:cursor-grabbing overflow-hidden min-h-0 touch-none"
+      style={{ touchAction: 'none' }}
+      onMouseDown={gestures.onMouseDown} onMouseMove={gestures.onMouseMove}
+      onMouseUp={gestures.onMouseUp} onMouseLeave={gestures.onMouseLeave}
+      onWheel={gestures.onWheel} onClick={gestures.onClick}
+      onTouchStart={gestures.onTouchStart} onTouchMove={gestures.onTouchMove}
+      onTouchEnd={gestures.onTouchEnd} onTouchCancel={gestures.onTouchCancel}
     >
       <svg
         ref={svgRef}
@@ -130,6 +128,9 @@ export function MapCanvas({
 
           {/* 0. Scientific Raster Layer (LOLA Topography, Hillshade, Slope, Geology, Illumination) */}
           <ScientificRasterLayer mode={scientificMapMode} />
+
+          {/* 0b. Vector Elevation Contours & Scale Bar (Active in topography mode) */}
+          <ElevationContourLayer visible={scientificMapMode === 'topography'} zoom={zoom} />
 
           {/* 1. Graticule Layer (Latitudes & Meridians) */}
           <MapGridLayer showGrid={layers.showGrid} zoom={zoom} />

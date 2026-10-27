@@ -33,7 +33,7 @@ export function GlobeLegend({ earthElevationDisplay, isCompact }: GlobeLegendPro
       </div>
 
       <div className="hidden sm:block bg-[var(--lm-color-surface)]/85 backdrop-blur-xs px-2.5 py-1 rounded-[var(--lm-radius-sm)] border border-[var(--lm-color-border)] text-[10px] font-mono text-[var(--lm-color-text-muted)]">
-        Source: NASA GSFC CGI Moon Kit (LROC WAC / LOLA DEM)
+        Source: NASA GSFC CGI Moon Kit (LROC WAC / LOLA DEM) • IAU 2000 ME
       </div>
     </div>
   );

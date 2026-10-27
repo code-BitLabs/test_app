@@ -13,6 +13,15 @@ import type { VolatileProspectingResult } from '@domain/volatiles/types';
 import { solveParetoLandingWindows } from '@domain/windows/paretoWindowSolver';
 import type { ParetoOptimizationResult, ParetoWindowRequest } from '@domain/windows/types';
 import type { CalculationMode } from '@domain/celestial/calculationMode';
+import {
+  evaluateLandingSafety,
+  type LandingSafetyEvaluationInput,
+  type LandingSafetyEvaluationResult,
+} from '@domain/safety/landingSafetyIndex';
+import {
+  calculateSlopeRoughnessAtCoordinates,
+  type SlopeRoughnessResult,
+} from '@domain/terrain/beckmannRoughness';
 
 export interface MissionServerClientConfig {
   baseUrl: string;
@@ -29,6 +38,26 @@ export class MissionServerClient {
 
   withBaseUrl(baseUrl: string): MissionServerClient {
     return new MissionServerClient({ ...this.config, baseUrl });
+  }
+
+  private async postJson<T>(endpoint: string, body: unknown): Promise<T | null> {
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), this.config.timeoutMs);
+      const res = await fetch(`${this.config.baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      clearTimeout(id);
+      if (res.ok) {
+        return (await res.json()) as T;
+      }
+    } catch {
+      // Backend offline or timeout -> triggers domain fallback
+    }
+    return null;
   }
 
   async checkHealth(): Promise<{ status: string; framework: string } | null> {
@@ -49,23 +78,9 @@ export class MissionServerClient {
     epochMs: number;
     calculationMode?: CalculationMode;
   }) {
-    // Attempt NextRush backend API call
-    try {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), this.config.timeoutMs);
-      const res = await fetch(`${this.config.baseUrl}/ephemeris/conditions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-        signal: controller.signal,
-      });
-      clearTimeout(id);
-      if (res.ok) {
-        const data = await res.json();
-        return { ...data, source: 'nextrush_server' as const };
-      }
-    } catch {
-      // Backend offline or timed out; execute local domain fallback
+    const data = await this.postJson<any>('/ephemeris/conditions', input);
+    if (data) {
+      return { ...data, source: 'nextrush_server' as const };
     }
 
     // Local resilient domain calculation fallback
@@ -99,23 +114,9 @@ export class MissionServerClient {
     transmitterPowerWatts?: number;
     dataRateMbps?: number;
   }) {
-    // Attempt NextRush backend API call
-    try {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), this.config.timeoutMs);
-      const res = await fetch(`${this.config.baseUrl}/telecom/link-budget`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-        signal: controller.signal,
-      });
-      clearTimeout(id);
-      if (res.ok) {
-        const data = await res.json();
-        return { ...data, source: 'nextrush_server' as const };
-      }
-    } catch {
-      // Backend offline; execute local domain fallback
+    const data = await this.postJson<any>('/telecom/link-budget', input);
+    if (data) {
+      return { ...data, source: 'nextrush_server' as const };
     }
 
     // Local fallback
@@ -142,35 +143,16 @@ export class MissionServerClient {
       earthElevationDeg,
       earthDistanceKm: conditions.earthDistanceKm,
       linkBudget,
-      dsnTracking: {
-        stations,
-        activeStation,
-      },
+      dsnTracking: { stations, activeStation },
       source: 'local_analytical_fallback' as const,
     };
   }
 
   async getTraversalPlan(input: TraversalPlanRequest): Promise<TraversalPlan & { source: 'nextrush_server' | 'local_analytical_fallback' }> {
-    try {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), this.config.timeoutMs);
-      const res = await fetch(`${this.config.baseUrl}/traversal/plan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-        signal: controller.signal,
-      });
-      clearTimeout(id);
-      if (res.ok) {
-        const body = await res.json();
-        if (body.data) {
-          return { ...body.data, source: 'nextrush_server' as const };
-        }
-      }
-    } catch {
-      // Backend offline; fallback to local analytical calculation
+    const body = await this.postJson<{ data: TraversalPlan }>('/traversal/plan', input);
+    if (body?.data) {
+      return { ...body.data, source: 'nextrush_server' as const };
     }
-
     const plan = calculateTraversalPlan(input);
     return { ...plan, source: 'local_analytical_fallback' as const };
   }
@@ -179,26 +161,10 @@ export class MissionServerClient {
     latDeg: number;
     lonDeg: number;
   }): Promise<VolatileProspectingResult & { source: 'nextrush_server' | 'local_analytical_fallback' }> {
-    try {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), this.config.timeoutMs);
-      const res = await fetch(`${this.config.baseUrl}/volatiles/prospect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-        signal: controller.signal,
-      });
-      clearTimeout(id);
-      if (res.ok) {
-        const body = await res.json();
-        if (body.data) {
-          return { ...body.data, source: 'nextrush_server' as const };
-        }
-      }
-    } catch {
-      // Backend offline; execute local analytical fallback
+    const body = await this.postJson<{ data: VolatileProspectingResult }>('/volatiles/prospect', input);
+    if (body?.data) {
+      return { ...body.data, source: 'nextrush_server' as const };
     }
-
     const data = prospectVolatilesAtCoordinates(input.latDeg, input.lonDeg);
     return { ...data, source: 'local_analytical_fallback' as const };
   }
@@ -206,28 +172,40 @@ export class MissionServerClient {
   async optimizeLandingWindows(
     input: ParetoWindowRequest,
   ): Promise<ParetoOptimizationResult & { source: 'nextrush_server' | 'local_analytical_fallback' }> {
-    try {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), this.config.timeoutMs);
-      const res = await fetch(`${this.config.baseUrl}/windows/optimize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-        signal: controller.signal,
-      });
-      clearTimeout(id);
-      if (res.ok) {
-        const body = await res.json();
-        if (body.data) {
-          return { ...body.data, source: 'nextrush_server' as const };
-        }
-      }
-    } catch {
-      // Backend offline; execute local analytical fallback
+    const body = await this.postJson<{ data: ParetoOptimizationResult }>('/windows/optimize', input);
+    if (body?.data) {
+      return { ...body.data, source: 'nextrush_server' as const };
     }
-
     const data = solveParetoLandingWindows(input);
     return { ...data, source: 'local_analytical_fallback' as const };
+  }
+
+  async evaluateLandingSafety(
+    input: LandingSafetyEvaluationInput,
+  ): Promise<LandingSafetyEvaluationResult & { source: 'nextrush_server' | 'local_analytical_fallback' }> {
+    const data = await this.postJson<LandingSafetyEvaluationResult>('/landing-safety/evaluate', input);
+    if (data) {
+      return { ...data, source: 'nextrush_server' as const };
+    }
+    const fallback = evaluateLandingSafety(input);
+    return { ...fallback, source: 'local_analytical_fallback' as const };
+  }
+
+  async calculateTerrainRoughness(input: {
+    latDeg: number;
+    lonDeg: number;
+    sampleRadiusMeters?: number;
+  }): Promise<SlopeRoughnessResult & { source: 'nextrush_server' | 'local_analytical_fallback' }> {
+    const data = await this.postJson<SlopeRoughnessResult>('/terrain/slope-roughness', input);
+    if (data) {
+      return { ...data, source: 'nextrush_server' as const };
+    }
+    const fallback = calculateSlopeRoughnessAtCoordinates(
+      input.latDeg,
+      input.lonDeg,
+      input.sampleRadiusMeters,
+    );
+    return { ...fallback, source: 'local_analytical_fallback' as const };
   }
 }
 

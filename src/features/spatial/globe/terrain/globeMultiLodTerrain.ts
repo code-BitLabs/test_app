@@ -62,8 +62,9 @@ export function createMultiLodTerrainMesh(initialSite: CandidateSite): MultiLodT
     normalScale: new THREE.Vector2(0.55, 0.55),
     roughness: 0.94,
     metalness: 0.0,
-    color: 0xffffff,
-    polygonOffset: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -1.0,
+    polygonOffsetUnits: -4.0,
     shadowSide: THREE.FrontSide,
   });
 

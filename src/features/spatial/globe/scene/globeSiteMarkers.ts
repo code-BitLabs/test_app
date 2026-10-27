@@ -57,37 +57,28 @@ function roundedPillPath(ctx: CanvasRenderingContext2D): void {
 /** Billboarded compact site badge; only the selected site or hovered site is shown to avoid crowding. */
 export function createSiteBadge(text: string, isSelected: boolean): THREE.Sprite {
   if (typeof document === 'undefined') {
-    const sprite = new THREE.Sprite(
-      new THREE.SpriteMaterial({ depthTest: false, depthWrite: false, transparent: true }),
-    );
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ depthTest: false, depthWrite: false, transparent: true }));
     sprite.scale.set(0.18, 0.045, 1);
     return sprite;
   }
-
   const canvas = document.createElement('canvas');
   canvas.width = BADGE_CANVAS_WIDTH;
   canvas.height = BADGE_CANVAS_HEIGHT;
   const ctx = canvas.getContext('2d')!;
-
   ctx.fillStyle = isSelected ? 'rgba(6, 14, 27, 0.95)' : 'rgba(10, 18, 30, 0.88)';
   ctx.strokeStyle = isSelected ? '#22d3ee' : '#475569';
   ctx.lineWidth = isSelected ? 3.0 : 1.5;
   roundedPillPath(ctx);
   ctx.fill();
   ctx.stroke();
-
   ctx.fillStyle = isSelected ? '#22d3ee' : '#cbd5e1';
   ctx.font = isSelected ? 'bold 20px "JetBrains Mono", monospace' : '18px "JetBrains Mono", monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, BADGE_TEXT_ORIGIN.x, BADGE_TEXT_ORIGIN.y);
-
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
-  const sprite = new THREE.Sprite(
-    new THREE.SpriteMaterial({ map: texture, depthTest: false, depthWrite: false, transparent: true }),
-  );
-  // Compact restrained scale (0.18 x 0.045 scene units)
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, depthTest: false, depthWrite: false, transparent: true }));
   sprite.scale.set(0.18, 0.045, 1);
   return sprite;
 }
@@ -117,12 +108,7 @@ export function createSiteMarkers(selectedSiteId: string): SiteMarkerLayer {
   CANDIDATE_SITES.forEach((site) => {
     const isSelected = site.id === selectedSiteId;
     const isCompared = DEFAULT_COMPARISON_SITE_IDS.includes(site.id);
-
-    const surfacePos = latLonToVector3(
-      site.coordinates.latitudeDeg,
-      site.coordinates.longitudeDeg,
-      MOON_SCENE_RADIUS * SURFACE_LIFT,
-    );
+    const surfacePos = latLonToVector3(site.coordinates.latitudeDeg, site.coordinates.longitudeDeg, MOON_SCENE_RADIUS * SURFACE_LIFT);
     const normal = surfacePos.clone().normalize();
     const beaconPos = surfacePos.clone().add(normal.clone().multiplyScalar(STALK_HEIGHT));
     const badgePos = beaconPos.clone().add(normal.clone().multiplyScalar(BADGE_LIFT));
@@ -130,12 +116,7 @@ export function createSiteMarkers(selectedSiteId: string): SiteMarkerLayer {
     const container = new THREE.Group();
     container.userData = { siteId: site.id };
 
-    const ringColor = isSelected
-      ? SELECTED_COLOR
-      : isCompared
-      ? COMPARED_RING_COLOR
-      : DIM_COLOR;
-
+    const ringColor = isSelected ? SELECTED_COLOR : isCompared ? COMPARED_RING_COLOR : DIM_COLOR;
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(RING_INNER_RADIUS, RING_OUTER_RADIUS, RING_SEGMENTS),
       new THREE.MeshBasicMaterial({
@@ -153,20 +134,11 @@ export function createSiteMarkers(selectedSiteId: string): SiteMarkerLayer {
     const stalkColor = isSelected ? SELECTED_COLOR : isCompared ? COMPARED_COLOR : DIM_COLOR;
     const stalk = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([surfacePos, beaconPos]),
-      new THREE.LineBasicMaterial({
-        color: stalkColor,
-        transparent: true,
-        opacity: isSelected ? SELECTED_OPACITY : DIM_STALK_OPACITY,
-      }),
+      new THREE.LineBasicMaterial({ color: stalkColor, transparent: true, opacity: isSelected ? SELECTED_OPACITY : DIM_STALK_OPACITY }),
     );
     container.add(stalk);
 
-    const beaconColor = isSelected
-      ? SELECTED_COLOR
-      : isCompared
-      ? COMPARED_COLOR
-      : UNSELECTED_BEACON_COLOR;
-
+    const beaconColor = isSelected ? SELECTED_COLOR : isCompared ? COMPARED_COLOR : UNSELECTED_BEACON_COLOR;
     const beacon = new THREE.Mesh(
       new THREE.SphereGeometry(BEACON_RADIUS, BEACON_SEGMENTS, BEACON_SEGMENTS),
       new THREE.MeshBasicMaterial({ color: beaconColor }),
@@ -270,7 +242,6 @@ export function applyMarkerHorizonOcclusion(
   markers.forEach(({ container, ring, beacon, stalk, surfacePos, normal, badge, site }) => {
     const isSelected = site.id === selectedSiteId;
 
-    // In local inspection mode, hide all distant unselected markers to prevent visual clutter
     if (isLocalInspection && !isSelected) {
       container.visible = false;
       return;
@@ -284,7 +255,6 @@ export function applyMarkerHorizonOcclusion(
     container.visible = isFrontFacing;
     if (!isFrontFacing) return;
 
-    // Scale marker geometry proportionally to camera distance to maintain delicate, sharp pin appearance
     const scaleFactor = isLocalInspection
       ? Math.min(1.0, Math.max(0.18, dist / 1.5))
       : Math.min(1.15, Math.max(0.35, dist / 3.8));
@@ -294,7 +264,6 @@ export function applyMarkerHorizonOcclusion(
     beacon.scale.setScalar(finalScale);
     stalk.scale.set(finalScale, finalScale, finalScale);
 
-    // Badge visibility: only shown if labels are enabled and not excessively zoomed in
     const shouldShowBadge = showLabels && isSelected && (!isLocalInspection || distToTarget >= 0.28);
     badge.visible = shouldShowBadge;
     if (shouldShowBadge) {

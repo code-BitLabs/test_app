@@ -1,11 +1,11 @@
 import { DEFAULT_PROJECTION_CONFIG, unprojectCoordinates } from '@/domain/coordinates/projection';
 import {
   sampleTerrainAtLatLon,
-  getLolaElevationRgb,
   getSlopeRgb,
   getGeologyUnitRgb,
   getIlluminationRgb,
 } from '@/features/spatial/globe/terrain/lolaSouthPoleDemSampler';
+import { getNasaSvsElevationRgb } from '@/domain/terrain/nasaSvsColorRamp';
 import { getVolatilesRgb, getTemperatureRgb } from '@/domain/volatiles/volatileColorMaps';
 import { evaluateLendNeutronFlux } from '@/domain/volatiles/lendNeutronModel';
 import { evaluateDivinerTemperature } from '@/domain/volatiles/divinerThermalModel';
@@ -72,7 +72,7 @@ export function generateScientificMapRasterUrl(
       let rgb: [number, number, number];
       switch (mode) {
         case 'topography':
-          rgb = getLolaElevationRgb(sample.elevationMeters);
+          rgb = getNasaSvsElevationRgb(sample.elevationMeters);
           break;
         case 'hillshade': {
           const val = Math.round(sample.hillshade * 255);

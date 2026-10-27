@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CandidateSite } from '@/domain/sites/candidateSite';
 import { CameraPreset } from '@/features/spatial/model/spatialPreferences';
 import { MOON_SCENE_RADIUS, latLonToVector3 } from '@/features/spatial/globe/scene/globeScene';
+import { CameraTransitioner, createCameraTransitionerWithResolver } from './globeCameraTransitioner';
 
 /** Per-frame easing of a preset change: progress closes the transition, lerp moves the view. */
 const TRANSITION_PROGRESS_STEP = 0.055;
@@ -178,6 +178,82 @@ export function cameraPoseForPreset(preset: CameraPreset, site: CandidateSite): 
     };
   }
 
+  if (preset === 'earth_align') {
+    // Earth Alignment: Camera placed at candidate site looking along topocentric DTE vector toward Earth hovering on the horizon
+    const earthVector = new THREE.Vector3(0, 0, 1).sub(surfacePos).normalize();
+    const camPos = surfacePos
+      .clone()
+      .add(normal.clone().multiplyScalar(0.025))
+      .sub(earthVector.clone().multiplyScalar(0.04));
+    const lookTarget = surfacePos
+      .clone()
+      .add(earthVector.clone().multiplyScalar(0.08))
+      .add(normal.clone().multiplyScalar(0.008));
+
+    return {
+      camPos,
+      lookTarget,
+      upVector: normal.clone().normalize(),
+    };
+  }
+
+  if (preset === 'orbit360') {
+    // Orbit 360°: Circular orbital observation vantage point (~0.65 units altitude, 45° inclination)
+    const { east } = getTopocentricBasis(
+      site.coordinates.latitudeDeg,
+      site.coordinates.longitudeDeg,
+      MOON_SCENE_RADIUS + elevSceneUnits,
+    );
+    const camPos = surfacePos
+      .clone()
+      .add(normal.clone().multiplyScalar(0.65))
+      .add(east.clone().multiplyScalar(0.35))
+      .add(north.clone().multiplyScalar(0.25));
+
+    return {
+      camPos,
+      lookTarget: surfacePos.clone(),
+      upVector: normal.clone().normalize(),
+    };
+  }
+
+  if (preset === 'north_look') {
+    // North-Looking: Camera anchored at site oriented toward local North along prime meridian
+    const camPos = surfacePos
+      .clone()
+      .add(normal.clone().multiplyScalar(0.03))
+      .sub(north.clone().multiplyScalar(0.05));
+    const lookTarget = surfacePos
+      .clone()
+      .add(north.clone().multiplyScalar(0.06))
+      .add(normal.clone().multiplyScalar(0.006));
+
+    return {
+      camPos,
+      lookTarget,
+      upVector: normal.clone().normalize(),
+    };
+  }
+
+  if (preset === 'sunward_terminator') {
+    // Sunward Terminator: Camera oriented facing the grazing solar vector (0.5°-2.0° elevation) across shadow boundary
+    const sunVector = new THREE.Vector3(1, 0, 0.4).normalize();
+    const camPos = surfacePos
+      .clone()
+      .add(normal.clone().multiplyScalar(0.018))
+      .sub(sunVector.clone().multiplyScalar(0.045));
+    const lookTarget = surfacePos
+      .clone()
+      .add(sunVector.clone().multiplyScalar(0.075))
+      .add(normal.clone().multiplyScalar(0.004));
+
+    return {
+      camPos,
+      lookTarget,
+      upVector: normal.clone().normalize(),
+    };
+  }
+
   // 'site' preset: Candidate Overview framing surrounding crater complexes (1.26 units range, within 1.0 - 2.0 units)
   return {
     camPos: surfacePos
@@ -189,55 +265,9 @@ export function cameraPoseForPreset(preset: CameraPreset, site: CandidateSite): 
   };
 }
 
-export interface CameraTransitioner {
-  moveTo: (preset: CameraPreset, site: CandidateSite) => void;
-  cancel: () => void;
-  isTransitioning: () => boolean;
-  /** Advances an in-flight transition; idles at zero cost between preset changes. */
-  step: (camera: THREE.PerspectiveCamera, controls: OrbitControls) => void;
-}
+export type { CameraTransitioner } from './globeCameraTransitioner';
 
 /** Eased camera moves between presets, interruptible on user manipulation. */
 export function createCameraTransitioner(): CameraTransitioner {
-  let target: (CameraPose & { progress: number }) | null = null;
-
-  return {
-    moveTo: (preset, site) => {
-      target = { ...cameraPoseForPreset(preset, site), progress: 0 };
-    },
-    cancel: () => {
-      target = null;
-    },
-    isTransitioning: () => target !== null,
-    step: (camera, controls) => {
-      if (!target) return;
-      target.progress = Math.min(1.0, target.progress + TRANSITION_PROGRESS_STEP);
-      camera.position.lerp(target.camPos, TRANSITION_LERP_FACTOR);
-      controls.target.lerp(target.lookTarget, TRANSITION_LERP_FACTOR);
-      camera.up.lerp(target.upVector, TRANSITION_LERP_FACTOR);
-      if (camera.up.lengthSq() > 1e-4) {
-        camera.up.normalize();
-      }
-      camera.lookAt(controls.target);
-
-      if (target.progress >= 1.0) {
-        camera.position.copy(target.camPos);
-        controls.target.copy(target.lookTarget);
-        camera.up.copy(target.upVector).normalize();
-        camera.lookAt(controls.target);
-
-        if ((controls as any)._quat && (controls as any)._quatInverse) {
-          (controls as any)._quat.setFromUnitVectors(camera.up, new THREE.Vector3(0, 1, 0));
-          (controls as any)._quatInverse.copy((controls as any)._quat).invert();
-        }
-        (controls as any)._sphericalDelta?.set(0, 0, 0);
-        (controls as any)._panOffset?.set(0, 0, 0);
-        (controls as any)._scale = 1;
-        if (typeof controls.update === 'function') {
-          controls.update();
-        }
-        target = null;
-      }
-    },
-  };
+  return createCameraTransitionerWithResolver(cameraPoseForPreset);
 }

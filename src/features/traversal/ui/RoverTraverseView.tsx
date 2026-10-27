@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PRESET_LUNAR_TRAVERSES } from '@/domain/traversal/presetRoutes';
 import { PresetLunarTraverse, TraversalPlan } from '@/domain/traversal/types';
 import { missionServerClient } from '@/domain/services/missionServerClient';
@@ -6,16 +6,62 @@ import { TraverseRouteSelector } from '../components/TraverseRouteSelector';
 import { TraverseElevationTransect } from '../components/TraverseElevationTransect';
 import { TraverseTelemetryCard } from '../components/TraverseTelemetryCard';
 import { Compass, RefreshCw } from 'lucide-react';
+import { useScenario } from '@/app/scenario/context/scenarioContext';
+import { getSiteById, CANDIDATE_SITES } from '@/domain/sites/catalog';
 
 export function RoverTraverseView() {
-  const [selectedRoute, setSelectedRoute] = useState<PresetLunarTraverse>(
-    PRESET_LUNAR_TRAVERSES[0],
-  );
+  const { selectedSiteId, customTarget } = useScenario();
+
+  const customRoute: PresetLunarTraverse | null = useMemo(() => {
+    if (!customTarget) return null;
+    const site = getSiteById(selectedSiteId) ?? CANDIDATE_SITES[0];
+    return {
+      id: `custom-target-${customTarget.id}`,
+      name: `Custom Target: ${customTarget.name}`,
+      subtitle: `Lander (${site.name}) to Custom Target (${customTarget.latitudeDeg.toFixed(2)}°, ${customTarget.longitudeDeg.toFixed(2)}°)`,
+      description: `A* slope-optimized traverse from ${site.name} to designated target coordinates ${customTarget.name}.`,
+      originName: site.name,
+      originLatDeg: site.coordinates.latitudeDeg,
+      originLonDeg: site.coordinates.longitudeDeg,
+      destinationName: customTarget.name,
+      destinationLatDeg: customTarget.latitudeDeg,
+      destinationLonDeg: customTarget.longitudeDeg,
+      scientificGoal: 'Geotechnical surface inspection, regolith sample collection, and PSR boundary approach.',
+    };
+  }, [customTarget, selectedSiteId]);
+
+  const availableRoutes = useMemo(() => {
+    return customRoute ? [customRoute, ...PRESET_LUNAR_TRAVERSES] : PRESET_LUNAR_TRAVERSES;
+  }, [customRoute]);
+
+  const [selectedRoute, setSelectedRoute] = useState<PresetLunarTraverse>(() => {
+    if (customRoute) return customRoute;
+    const match = PRESET_LUNAR_TRAVERSES.find((r) =>
+      r.id.toLowerCase().includes(selectedSiteId.replace(/-rim|-massif|-plateau/g, '')) ||
+      r.originName.toLowerCase().includes(selectedSiteId.replace(/-/g, ' ')),
+    );
+    return match ?? PRESET_LUNAR_TRAVERSES[0];
+  });
+
   const [activeWaypointIndex, setActiveWaypointIndex] = useState<number | null>(0);
   const [plan, setPlan] = useState<
     (TraversalPlan & { source: 'nextrush_server' | 'local_analytical_fallback' }) | null
   >(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (customRoute) {
+      setSelectedRoute(customRoute);
+      return;
+    }
+    const match = PRESET_LUNAR_TRAVERSES.find((r) =>
+      r.id.toLowerCase().includes(selectedSiteId.replace(/-rim|-massif|-plateau/g, '')) ||
+      r.originName.toLowerCase().includes(selectedSiteId.replace(/-/g, ' ')),
+    );
+    if (match) {
+      setSelectedRoute(match);
+    }
+  }, [selectedSiteId, customRoute]);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +123,7 @@ export function RoverTraverseView() {
       <TraverseRouteSelector
         selectedRouteId={selectedRoute.id}
         onSelectRoute={setSelectedRoute}
+        routes={availableRoutes}
       />
 
       {/* Altimetry Transect Profile */}

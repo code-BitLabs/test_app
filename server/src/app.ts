@@ -11,6 +11,10 @@ import { traversalRouter } from '@server/routes/traversalRoutes';
 import { volatileRouter } from '@server/routes/volatileRoutes';
 import { windowRouter } from '@server/routes/windowRoutes';
 import { dossierRouter } from '@server/routes/dossierRoutes';
+import { createTerrainRouter } from '@server/routes/terrainRoute';
+import { createSafetyRouter } from '@server/routes/safetyRoute';
+import { createEphemerisProxyRouter } from '@server/routes/ephemerisRoute';
+import { createMediaRouter } from '@server/routes/mediaRoute';
 
 export function createServerApp() {
   const app = createApp();
@@ -34,11 +38,15 @@ export function createServerApp() {
 
   apiRouter.mount('', healthRouter);
   apiRouter.mount('/ephemeris', ephemerisRouter);
+  apiRouter.mount('/ephemeris', createEphemerisProxyRouter());
   apiRouter.mount('/telecom', telecomRouter);
   apiRouter.mount('/traversal', traversalRouter);
   apiRouter.mount('/volatiles', volatileRouter);
   apiRouter.mount('/windows', windowRouter);
   apiRouter.mount('/dossier', dossierRouter);
+  apiRouter.mount('/terrain', createTerrainRouter());
+  apiRouter.mount('/landing-safety', createSafetyRouter());
+  apiRouter.mount('/media', createMediaRouter());
 
   app.route('/api', apiRouter);
 

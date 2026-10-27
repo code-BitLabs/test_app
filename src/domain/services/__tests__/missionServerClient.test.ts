@@ -80,3 +80,36 @@ test('Mission Server Client: optimizes landing windows via fallback when backend
   assert.equal(result.siteId, 'connecting-ridge');
   assert.ok(result.topWindows.length > 0);
 });
+
+test('Mission Server Client: evaluates landing safety via fallback when backend is unreachable', async () => {
+  const client = missionServerClient.withBaseUrl('http://127.0.0.1:59999/api');
+
+  const result = await client.evaluateLandingSafety({
+    slopeDeg: 3.5,
+    illuminationPct: 80.0,
+    earthVisibilityPct: 70.0,
+    volatilesScore: 60.0,
+    roughnessTheta0Deg: 3.0,
+  });
+
+  assert.equal(result.source, 'local_analytical_fallback');
+  assert.equal(result.recommendation, 'GO');
+  assert.ok(result.compositeScore > 70);
+  assert.equal(result.breakdown.slopeScore, 100);
+});
+
+test('Mission Server Client: calculates terrain slope roughness via fallback when backend is unreachable', async () => {
+  const client = missionServerClient.withBaseUrl('http://127.0.0.1:59999/api');
+
+  const result = await client.calculateTerrainRoughness({
+    latDeg: -89.44,
+    lonDeg: 222.5,
+  });
+
+  assert.equal(result.source, 'local_analytical_fallback');
+  assert.ok(typeof result.slopeDeg === 'number');
+  assert.ok(typeof result.rmsSlope_s === 'number');
+  assert.ok(typeof result.beckmannRoughnessTheta0Deg === 'number');
+  assert.ok(typeof result.isTipOverHazard === 'boolean');
+});
+

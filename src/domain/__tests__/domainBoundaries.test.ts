@@ -54,13 +54,14 @@ const BROWSER_GLOBAL =
  */
 const BROWSER_GLOBALS_ALLOWED = [
   'features/passport/hooks/useInspectorViewport.ts',
-  'features/spatial/globe/scene/globeCelestialVectors.ts',
+  'features/spatial/globe/scene/celestialVectorAssets.ts',
   'features/spatial/globe/scene/globeScene.ts',
-  'features/spatial/globe/scene/globeSceneBuilder.ts',
+  'features/spatial/globe/scene/globeSceneAnimator.ts',
   'features/spatial/globe/scene/globeSiteMarkers.ts',
   'features/spatial/globe/scene/globeSurfaceMaterial.ts',
   'features/spatial/hooks/useWorkspaceFullscreen.ts',
 ];
+
 
 function stripComments(text: string): string {
   return text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');

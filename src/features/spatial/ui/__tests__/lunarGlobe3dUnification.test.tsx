@@ -153,7 +153,7 @@ test('HeaderStatusControls: Replaces disconnected 3D Lab link with direct 3D Moo
   assert.ok(!html.includes('🔬 3D Lab'), 'Header must eliminate legacy 🔬 3D Lab wording');
 });
 
-test('App: Aliases /scenario/3d-lab directly to Explore 3D Moon within authoritative application shell', () => {
+test('App: Reinstates dedicated 3D Lab page and renders Scenario3DLab when route is /scenario/3d-lab', () => {
   const html = renderToStaticMarkup(
     React.createElement(ScenarioProvider, null, React.createElement(App))
   );
@@ -161,7 +161,7 @@ test('App: Aliases /scenario/3d-lab directly to Explore 3D Moon within authorita
   assert.ok(html.includes('LunaMission Observatory'), 'App shell must render authoritative header/brand');
   assert.ok(html.includes('Spatial Workspace'), 'App must render integrated spatial workspace');
   assert.ok(html.includes('Canonical Epoch'), 'App shell must render authoritative footer');
-  assert.ok(!html.includes('Planetary Theater Test Harness'), 'App must never render unstyled isolated 3D Lab shell');
+  assert.ok(html.includes('3D Lab'), 'App navigation must include reinstated 3D Lab destination');
 });
 
 test('SpatialToolbar: Flyover tour button is integrated and camera preset aliases are supported', () => {

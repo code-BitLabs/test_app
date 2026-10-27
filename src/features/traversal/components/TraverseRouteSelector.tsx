@@ -5,15 +5,17 @@ import { Route, Navigation } from 'lucide-react';
 interface TraverseRouteSelectorProps {
   selectedRouteId: string;
   onSelectRoute: (route: PresetLunarTraverse) => void;
+  routes?: PresetLunarTraverse[];
 }
 
 export function TraverseRouteSelector({
   selectedRouteId,
   onSelectRoute,
+  routes = PRESET_LUNAR_TRAVERSES,
 }: TraverseRouteSelectorProps) {
   const activeRoute =
-    PRESET_LUNAR_TRAVERSES.find((r) => r.id === selectedRouteId) ||
-    PRESET_LUNAR_TRAVERSES[0];
+    routes.find((r) => r.id === selectedRouteId) ||
+    routes[0];
 
   return (
     <div className="bg-[var(--lm-color-surface)] border border-[var(--lm-color-border-subtle)] rounded-xl p-4 flex flex-col gap-4 shadow-sm">
@@ -25,13 +27,13 @@ export function TraverseRouteSelector({
           </h2>
         </div>
         <span className="text-xs font-mono text-[var(--lm-color-text-muted)] bg-[var(--lm-color-canvas)] px-2 py-0.5 rounded border border-[var(--lm-color-border-subtle)]">
-          {PRESET_LUNAR_TRAVERSES.length} Canonical Traverses
+          {routes.length} Canonical Traverses
         </span>
       </div>
 
       {/* Preset Corridor Selector Buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-        {PRESET_LUNAR_TRAVERSES.map((route) => {
+        {routes.map((route) => {
           const isSelected = route.id === selectedRouteId;
           return (
             <button

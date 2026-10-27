@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import {
   SelenographicLatitudeDeg,
   SelenographicLongitudeDeg,
@@ -13,7 +14,7 @@ export const MOON_SCENE_RADIUS = 1.45;
 
 const SCENE_BACKGROUND = 0x070b12;
 const CAMERA_FOV_DEG = 38;
-const CAMERA_NEAR = 0.05;
+export const CAMERA_NEAR = 0.001;
 const CAMERA_FAR = 100;
 /** Nadir opening pose: straight down on 90°S, +Z (prime meridian) held up, Moon occupying ~76% of frame. */
 const INITIAL_CAMERA_POSITION: readonly [number, number, number] = [0, -4.8, 0.0001];
@@ -164,6 +165,7 @@ export function createGlobeScene(width: number, height: number): GlobeScene {
     antialias: !isSoftwareGl,
     alpha: false,
     powerPreference: 'high-performance',
+    logarithmicDepthBuffer: true,
   });
   renderer.setSize(width, height);
   // Cap at 1.0 on software WebGL, or 1.75 on GPU to eliminate 4K / retina fullscreen fillrate lag
@@ -207,7 +209,7 @@ export function createGlobeScene(width: number, height: number): GlobeScene {
   const starfield = createCelestialStarfield();
   scene.add(starfield);
 
-  // Hardware GPU Post-Processing Pipeline (Bloom, Tone Mapping)
+  // Hardware GPU Post-Processing Pipeline (Bloom, Tone Mapping, Anti-Aliasing)
   let composer: EffectComposer | undefined;
   if (!isSoftwareGl) {
     try {
@@ -221,6 +223,13 @@ export function createGlobeScene(width: number, height: number): GlobeScene {
         0.88, // Luminance threshold (blinding solar peaks and Sun disc only)
       );
       composer.addPass(bloomPass);
+
+      try {
+        const smaaPass = new SMAAPass();
+        composer.addPass(smaaPass);
+      } catch {
+        // Fallback gracefully if SMAAPass fails in specific environment
+      }
     } catch {
       composer = undefined;
     }

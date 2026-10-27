@@ -2,6 +2,7 @@ import React from 'react';
 import { Layers } from 'lucide-react';
 import { ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 import { ScientificColorScaleBar } from './ScientificColorScaleBar';
+import { ScientificProvenanceBadge } from './ScientificProvenanceBadge';
 
 export interface ScientificMapLegendProps {
   mode: ScientificMapLayerMode;
@@ -45,14 +46,14 @@ export function ScientificMapLegend({
 
       {mode === 'topography' && (
         <ScientificColorScaleBar
-          leftLabel="-4,200 m (Floor)"
+          leftLabel="-9,000 m (Basin)"
           leftClass="text-purple-300 font-semibold"
-          midLabel="0 m (R=1737.4 km)"
-          rightLabel="+5,100 m (Massif)"
+          midLabel="0 m (Datum R=1737.4 km)"
+          rightLabel="+9,000 m (Highlands)"
           rightClass="text-rose-300 font-semibold"
-          gradient="linear-gradient(to right, #3b0764, #1d4ed8, #06b6d4, #10b981, #eab308, #ea580c, #fdf4ff)"
-          subLeft="NASA Goddard PGDA 78/90"
-          subRight="±1.2 m precision"
+          gradient="linear-gradient(to right, #2b0057, #1d2382, #134ea3, #0d7ec4, #09a4b8, #10bba0, #1fc575, #4fd33e, #8ee124, #d0ea15, #f7e212, #fca916, #f6641d, #e62828, #f060c0)"
+          subLeft="NASA SVS 3727 16-Color Ramp"
+          subRight="LOLA Altimetry (-9km to +9km)"
           subRightClass="text-emerald-400"
         />
       )}
@@ -99,12 +100,12 @@ export function ScientificMapLegend({
           <div className="grid grid-cols-4 gap-1 text-[9px]">
             <span className="px-1 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/60 text-center">&lt;5° Safe</span>
             <span className="px-1 py-0.5 rounded bg-lime-950 text-lime-300 border border-lime-700/60 text-center">5°-12° Mod</span>
-            <span className="px-1 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700/60 text-center">12°-18° Warn</span>
-            <span className="px-1 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-700/60 text-center">&gt;25° Steep</span>
+            <span className="px-1 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700/60 text-center">12°-15° Warn</span>
+            <span className="px-1 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-700/60 text-center font-bold">&ge;15° Hazard</span>
           </div>
           <div className="text-[9px] text-slate-400 flex items-center justify-between">
             <span>LOLA Altimetric Slope (GDR)</span>
-            <span className="text-cyan-300">Rover Trafficability</span>
+            <span className="text-rose-400 font-medium">Tip-Over Limit (≥15°)</span>
           </div>
         </div>
       )}
@@ -139,6 +140,9 @@ export function ScientificMapLegend({
           Natural optical albedo (LROC NAC controlled regional base mosaic).
         </div>
       )}
+
+      {/* Layer Scientific Provenance Display */}
+      <ScientificProvenanceBadge mode={mode} />
     </aside>
   );
 }

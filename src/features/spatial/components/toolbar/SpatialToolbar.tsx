@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Layers, FileText } from 'lucide-react';
 import { CameraPreset, SpatialLayer, SpatialPreferences } from '@/features/spatial/model/spatialPreferences';
 import { SpatialViewMode } from '@/features/spatial/model/spatialViewMode';
-import { CAMERA_PRESETS } from '@/features/spatial/config/spatialToolbarOptions';
+import { CAMERA_PRESETS, CAMERA_PRESET_ALIASES } from '@/features/spatial/config/spatialToolbarOptions';
 import { ViewModeSelector } from '@/features/spatial/components/toolbar/ViewModeSelector';
 import { CameraPresetSelector } from '@/features/spatial/components/toolbar/CameraPresetSelector';
 import { LayerToggleGroup } from '@/features/spatial/components/toolbar/LayerToggleGroup';
@@ -141,8 +141,8 @@ export function SpatialToolbar({
 
       {/* Automation aliases for test harnesses */}
       <div className="hidden" aria-hidden="true">
-        {CAMERA_PRESETS.map((p) => (
-          <button key={p.id} type="button" tabIndex={-1} data-testid={`preset-${p.preset}`} onClick={() => onCameraPresetChange(p.preset)} />
+        {[...CAMERA_PRESETS, ...CAMERA_PRESET_ALIASES].map((p) => (
+          <button key={`${p.id}-${p.preset}`} type="button" tabIndex={-1} data-testid={`preset-${p.preset}`} onClick={() => onCameraPresetChange(p.preset)} />
         ))}
         <button type="button" tabIndex={-1} data-testid="toggle-split-view" onClick={() => onViewModeChange(viewMode === 'dual' ? 'globe3d' : 'dual')} />
       </div>

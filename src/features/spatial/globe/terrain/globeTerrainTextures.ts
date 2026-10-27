@@ -10,11 +10,14 @@ import { CandidateSite } from '@/domain/sites/candidateSite';
 import { latLonToVector3 } from '@/features/spatial/globe/scene/globeScene';
 import {
   sampleTerrainAtLatLon,
-  getLolaElevationRgb,
   getSlopeRgb,
   getGeologyUnitRgb,
   getIlluminationRgb,
 } from './lolaSouthPoleDemSampler';
+import { getNasaSvsElevationRgb } from '@/domain/terrain/nasaSvsColorRamp';
+import { getVolatilesRgb, getTemperatureRgb } from '@/domain/volatiles/volatileColorMaps';
+import { evaluateLendNeutronFlux } from '@/domain/volatiles/lendNeutronModel';
+import { evaluateDivinerTemperature } from '@/domain/volatiles/divinerThermalModel';
 import { ScientificMapLayerMode } from '@/features/spatial/model/spatialPreferences';
 
 export function createLocalRegolithTexture(site: CandidateSite, patchRadiusKm = 110.0): THREE.DataTexture {
@@ -208,7 +211,7 @@ export function createLocalScientificTexture(
 
       switch (mode) {
         case 'topography':
-          rgb = getLolaElevationRgb(sample.elevationMeters);
+          rgb = getNasaSvsElevationRgb(sample.elevationMeters);
           break;
         case 'hillshade': {
           const val = Math.round(sample.hillshade * 255);
@@ -224,6 +227,16 @@ export function createLocalScientificTexture(
         case 'illumination':
           rgb = getIlluminationRgb(sample.annualIlluminationPct, sample.isPermanentlyShadowed);
           break;
+        case 'volatiles': {
+          const neutron = evaluateLendNeutronFlux(lat, lon);
+          rgb = getVolatilesRgb(neutron.hydrogenWeightPct);
+          break;
+        }
+        case 'temperature': {
+          const thermal = evaluateDivinerTemperature(lat, lon);
+          rgb = getTemperatureRgb(thermal.tempKelvin);
+          break;
+        }
         default:
           rgb = [172, 170, 168];
       }

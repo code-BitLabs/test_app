@@ -144,6 +144,7 @@ export function SpatialWorkspace({
           {viewport}
           {showPassportOverlay && <PassportDrawer onClose={closePassportOverlay} onOpenMethodDetails={onOpenMethodDetails} />}
         </div>
+        <TimeExplorer />
         {ribbon}
         {modals}
       </section>

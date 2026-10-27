@@ -9,18 +9,46 @@ import { PlanetaryTheaterHuds } from './components/PlanetaryTheaterHuds';
 import { PlanetaryTheaterSidebar } from './components/PlanetaryTheaterSidebar';
 import { usePlanetaryTheaterState } from './hooks/usePlanetaryTheaterState';
 
-export function Scenario3DLab() {
+export interface Scenario3DLabProps {
+  onReturnToObservatory?: () => void;
+}
+
+export function Scenario3DLab({ onReturnToObservatory }: Scenario3DLabProps = {}) {
   const state = usePlanetaryTheaterState();
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && state.isRoverActive) {
-        state.setIsRoverActive(false);
+      if (e.key === 'Escape') {
+        if (state.isComparisonOpen) {
+          state.setIsComparisonOpen(false);
+        } else if (state.isRoverActive) {
+          state.setIsRoverActive(false);
+        } else if (state.isFullscreen) {
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          }
+          state.setIsFullscreen(false);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [state.isRoverActive, state.setIsRoverActive]);
+  }, [
+    state.isRoverActive,
+    state.setIsRoverActive,
+    state.isComparisonOpen,
+    state.setIsComparisonOpen,
+    state.isFullscreen,
+    state.setIsFullscreen,
+  ]);
+
+  React.useEffect(() => {
+    const handleFullscreenChange = () => {
+      state.setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [state.setIsFullscreen]);
 
   const toggleNativeFullscreen = async () => {
     try {
@@ -39,14 +67,24 @@ export function Scenario3DLab() {
   };
 
   const handleReturnToObservatory = () => {
-    window.location.href = '/';
+    if (onReturnToObservatory) {
+      onReturnToObservatory();
+    } else {
+      try {
+        window.history.pushState(null, '', '/explore');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      } catch {
+        window.location.href = '/';
+      }
+    }
   };
 
   return (
     <div
       ref={state.containerRef}
-      className={`relative w-screen h-screen bg-[var(--lm-color-canvas)] text-[var(--lm-color-text-primary)] overflow-hidden flex flex-col select-none font-sans ${
-        state.isFullscreen ? 'fixed inset-0 z-50' : ''
+      style={{ touchAction: 'none' }}
+      className={`relative w-full h-full min-h-[580px] bg-[var(--lm-color-canvas)] text-[var(--lm-color-text-primary)] overflow-hidden flex flex-col select-none font-sans touch-none ${
+        state.isFullscreen ? 'fixed inset-0 z-50 !w-screen !h-screen' : ''
       }`}
     >
       <PlanetaryTheaterHeader

@@ -125,7 +125,11 @@ export function LunarGlobe3D(props: LunarGlobe3DProps) {
       {status.kind === 'loading' && <GlobeLoadingOverlay />}
       {status.kind === 'textureError' && <GlobeTextureErrorBanner message={status.message} />}
 
-      <div ref={containerRef} className="w-full h-full flex-1 cursor-grab active:cursor-grabbing min-h-0" />
+      <div
+        ref={containerRef}
+        style={{ touchAction: 'none' }}
+        className="w-full h-full flex-1 cursor-grab active:cursor-grabbing min-h-0 touch-none"
+      />
 
       <GlobeFlightDeckHudOverlay
         cameraPreset={cameraPreset}

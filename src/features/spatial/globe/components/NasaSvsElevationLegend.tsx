@@ -89,8 +89,8 @@ export function NasaSvsElevationLegend({
       </div>
 
       <footer className="mt-2 pt-1.5 border-t border-slate-800 text-[8px] text-slate-500 flex justify-between">
-        <span>Datum R₀ = 1737.4 km</span>
-        <span className="text-cyan-500">LRO / NASA</span>
+        <span>IAU 2000 ME (Datum R₀=1737.4 km)</span>
+        <span className="text-cyan-500">LRO LOLA • NASA GSFC</span>
       </footer>
     </aside>
   );

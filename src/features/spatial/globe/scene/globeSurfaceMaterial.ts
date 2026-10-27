@@ -192,7 +192,10 @@ export function createMoonSurface({ onTextureSettled, onSurfaceUnavailable }: Mo
     onTextureSettled();
   };
 
-  const geometry = new THREE.SphereGeometry(MOON_SCENE_RADIUS, MOON_SPHERE_SEGMENTS, MOON_SPHERE_SEGMENTS);
+  // Adjust base sphere radius to clear negative elevation crater floors (e.g. Shackleton at -4.2 km)
+  // Deepest lunar south pole depressions reach -9.0 km relative to mean lunar datum (1737.4 km) (e.g. South Pole-Aitken floor / NASA SVS bounds)
+  const BASE_SPHERE_RADIUS = MOON_SCENE_RADIUS * (1.0 - 9200.0 / 1737400.0);
+  const geometry = new THREE.SphereGeometry(BASE_SPHERE_RADIUS, MOON_SPHERE_SEGMENTS, MOON_SPHERE_SEGMENTS);
   const mesh = new THREE.Mesh(geometry, material);
   mesh.rotation.y = TEXTURE_PRIME_MERIDIAN_ROTATION_Y;
   mesh.castShadow = true;

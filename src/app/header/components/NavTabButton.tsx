@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { NavTab, NAV_TAB_TITLES } from '@/app/header/config/navTabs';
 
 const NAV_BUTTON_CLASS =
-  'flex items-center gap-1.5 px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-[var(--lm-radius-xs)] transition-colors';
+  'flex items-center gap-1.5 px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-[var(--lm-radius-xs)] transition-colors min-h-[44px] min-w-[44px] justify-center';
 const NAV_BUTTON_ACTIVE_CLASS =
   'bg-[var(--lm-color-surface-raised)] text-[var(--lm-color-text-primary)] border border-[var(--lm-color-border)] shadow-xs';
 const NAV_BUTTON_IDLE_CLASS = 'text-[var(--lm-color-text-muted)] hover:text-[var(--lm-color-text-secondary)]';

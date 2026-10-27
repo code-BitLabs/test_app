@@ -1,68 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Header } from '@/app/header/Header';
 import { NavTab } from '@/app/header/config/navTabs';
 import { SpatialWorkspace } from '@/features/spatial/ui/SpatialWorkspace';
 import { SpatialViewMode } from '@/features/spatial/model/spatialViewMode';
+import { Scenario3DLab } from '@/features/spatial/lab/Scenario3DLab';
 import { ComparisonMatrix } from '@/features/comparison/ui/ComparisonMatrix';
 import { TopocentricHorizonView } from '@/features/horizon/ui/TopocentricHorizonView';
 import { RoverTraverseView } from '@/features/traversal/ui/RoverTraverseView';
+import { NasaFootageGalleryView } from '@/features/gallery/ui/NasaFootageGalleryView';
 import { MethodAndDataView } from '@/features/methodology/ui/MethodAndDataView';
 import { CandidateSite } from '@/domain/sites/candidateSite';
 import { useScenarioCommands, useScenarioModel } from '@/app/scenario/context/scenarioContext';
+import { useMissionRouter } from '@/app/hooks/useMissionRouter';
 
 export default function App() {
-  const isInitial3D =
-    typeof window !== 'undefined' &&
-    (window.location.pathname.includes('3d-lab') ||
-      window.location.hash.includes('3d-lab') ||
-      window.location.search.includes('3d-lab'));
-
-  const [activeTab, setActiveTab] = useState<NavTab>('explore');
+  const { activeTab, navigateToTab } = useMissionRouter();
   const [spatialViewMode, setSpatialViewMode] = useState<SpatialViewMode>(
-    isInitial3D ? 'globe3d' : 'map2d'
+    activeTab === 'lab' ? 'globe3d' : 'map2d',
   );
-
-  useEffect(() => {
-    const checkAndApply3DRoute = () => {
-      const path = typeof window !== 'undefined' ? window.location.pathname + window.location.hash : '';
-      if (path.includes('3d-lab')) {
-        setActiveTab('explore');
-        setSpatialViewMode('globe3d');
-      }
-    };
-
-    const handleActivate3D = () => {
-      setActiveTab('explore');
-      setSpatialViewMode('globe3d');
-    };
-
-    window.addEventListener('popstate', checkAndApply3DRoute);
-    window.addEventListener('hashchange', checkAndApply3DRoute);
-    window.addEventListener('lm-activate-3d-moon', handleActivate3D);
-
-    if (isInitial3D) {
-      checkAndApply3DRoute();
-    }
-
-    return () => {
-      window.removeEventListener('popstate', checkAndApply3DRoute);
-      window.removeEventListener('hashchange', checkAndApply3DRoute);
-      window.removeEventListener('lm-activate-3d-moon', handleActivate3D);
-    };
-  }, [isInitial3D]);
 
   const { epochIsoUtc } = useScenarioModel();
   const { selectSite } = useScenarioCommands();
 
+  const handleTabChange = (tab: NavTab) => {
+    navigateToTab(tab);
+    if (tab === 'lab') {
+      setSpatialViewMode('globe3d');
+    }
+  };
+
   function handleSelectSiteForExplore(site: CandidateSite) {
     selectSite(site.id);
-    setActiveTab('explore');
+    handleTabChange('explore');
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--lm-color-canvas)] text-[var(--lm-color-text-primary)]">
       {/* 1. Global Authoritative Application Header */}
-      <Header activeTab={activeTab} onTabChange={setActiveTab} isDemoMode={false} />
+      <Header activeTab={activeTab} onTabChange={handleTabChange} isDemoMode={false} />
 
       {/* 2. Main Content Area in Normal Document Flow */}
       <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-6 min-w-0">
@@ -72,10 +47,16 @@ export default function App() {
             <SpatialWorkspace
               initialViewMode={spatialViewMode}
               onViewModeChange={setSpatialViewMode}
-              onOpenMethodDetails={() => setActiveTab('method')}
-              onNavigateHorizon={() => setActiveTab('horizon')}
+              onOpenMethodDetails={() => handleTabChange('method')}
+              onNavigateHorizon={() => handleTabChange('horizon')}
             />
           </div>
+        )}
+
+        {activeTab === 'lab' && (
+          <section className="w-full h-[calc(100vh-8.5rem)] min-h-[640px] relative rounded-[var(--lm-radius-sm)] overflow-hidden border border-[var(--lm-color-border-subtle)]" aria-label="Scenario 3D Planetary Theater Lab">
+            <Scenario3DLab onReturnToObservatory={() => handleTabChange('explore')} />
+          </section>
         )}
 
         {activeTab === 'compare' && (
@@ -93,6 +74,12 @@ export default function App() {
         {activeTab === 'traverse' && (
           <section className="w-full min-w-0" aria-label="Surface Rover Traversal and EVA Route Planner">
             <RoverTraverseView />
+          </section>
+        )}
+
+        {activeTab === 'gallery' && (
+          <section className="w-full min-w-0" aria-label="NASA Footage Gallery">
+            <NasaFootageGalleryView />
           </section>
         )}
 

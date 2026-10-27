@@ -121,7 +121,7 @@ export function SouthPoleMap({
       />
 
       {/* Map Viewport Area */}
-      <div className="relative flex-1 min-h-0 w-full overflow-hidden flex flex-col">
+      <div className="relative flex-1 min-h-0 w-full overflow-hidden flex flex-col touch-none" style={{ touchAction: 'none' }}>
         <MapOverlayCards
           hoveredSite={hoveredSite}
           hoverPreview={hoverPreview}
@@ -158,12 +158,11 @@ export function SouthPoleMap({
           scientificMapMode={preferences.scientificMapMode}
           onSelectScientificMapMode={handleSelectScientificMapMode}
           gestures={{
-            onMouseDown: viewport.handleMouseDown,
-            onMouseMove: viewport.handleMouseMove,
-            onMouseUp: viewport.handleMouseUp,
-            onMouseLeave: viewport.handleMouseLeave,
-            onWheel: viewport.handleWheel,
-            onClick: handleCanvasClick,
+            onMouseDown: viewport.handleMouseDown, onMouseMove: viewport.handleMouseMove,
+            onMouseUp: viewport.handleMouseUp, onMouseLeave: viewport.handleMouseLeave,
+            onWheel: viewport.handleWheel, onClick: handleCanvasClick,
+            onTouchStart: viewport.handleTouchStart, onTouchMove: viewport.handleTouchMove,
+            onTouchEnd: viewport.handleTouchEnd, onTouchCancel: viewport.handleTouchCancel,
           }}
         />
 

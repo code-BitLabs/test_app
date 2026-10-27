@@ -2,10 +2,12 @@ import { createContext, useContext, useMemo } from 'react';
 import { CalculationMode } from '@/domain/celestial/calculationMode';
 import { ScenarioAction, ScenarioState } from '@/app/scenario/state/scenarioState';
 import { ScenarioModel } from '@/app/scenario/model/scenarioModel';
+import { CustomLandingTarget } from '@/domain/target/customTargetModel';
 
 /** Command surface exposed to consumers so no component builds an action literal. */
 export interface ScenarioCommands {
   selectSite: (siteId: string) => void;
+  setCustomTarget: (target: CustomLandingTarget | null) => void;
   setEpoch: (epochMs: number) => void;
   setCalculationMode: (mode: CalculationMode) => void;
 }
@@ -40,6 +42,7 @@ export function useCommandFactory(dispatch: Dispatch): ScenarioCommands {
   return useMemo(
     () => ({
       selectSite: (siteId) => dispatch({ type: 'site/selected', siteId }),
+      setCustomTarget: (target) => dispatch({ type: 'customTarget/changed', target }),
       setEpoch: (epochMs) => dispatch({ type: 'epoch/changed', epochMs }),
       setCalculationMode: (mode) => dispatch({ type: 'calculationMode/changed', mode }),
     }),
@@ -51,6 +54,10 @@ export function useSelectSite(): (siteId: string) => void {
   return useScenarioCommands().selectSite;
 }
 
+export function useSetCustomTarget(): (target: CustomLandingTarget | null) => void {
+  return useScenarioCommands().setCustomTarget;
+}
+
 export function useSetEpoch(): (epochMs: number) => void {
   return useScenarioCommands().setEpoch;
 }
@@ -58,3 +65,4 @@ export function useSetEpoch(): (epochMs: number) => void {
 export function useSetCalculationMode(): (mode: CalculationMode) => void {
   return useScenarioCommands().setCalculationMode;
 }
+

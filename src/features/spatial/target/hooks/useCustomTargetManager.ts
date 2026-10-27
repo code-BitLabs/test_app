@@ -5,7 +5,7 @@
  * delta evaluations without cluttering UI presentation components.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useContext } from 'react';
 import { CandidateSite } from '@/domain/sites/candidateSite';
 import {
   computeTargetComparisonDeltas,
@@ -20,6 +20,10 @@ import {
   deleteCustomLandingTarget,
   KeyValueStorage,
 } from '@/domain/target/customTargetStorage';
+import {
+  ScenarioCommandsContext,
+  ScenarioStateContext,
+} from '@/app/scenario/context/scenarioContext';
 
 export interface UseCustomTargetManagerResult {
   customTarget: CustomLandingTarget | null;
@@ -42,18 +46,35 @@ export function useCustomTargetManager(
   epochMs: number,
   storage?: KeyValueStorage | null,
 ): UseCustomTargetManagerResult {
+  const scenarioState = useContext(ScenarioStateContext);
+  const scenarioCommands = useContext(ScenarioCommandsContext);
+
   const [isStudioOpen, setIsStudioOpen] = useState(false);
   const [isPinpointMode, setIsPinpointMode] = useState(false);
-  const [customTarget, setCustomTarget] = useState<CustomLandingTarget | null>(null);
+  const [localCustomTarget, setLocalCustomTarget] = useState<CustomLandingTarget | null>(null);
+
+  // Synchronize with global scenario context when present, with fallback to local state
+  const customTarget = scenarioState ? scenarioState.customTarget : localCustomTarget;
+
+  const setCustomTarget = useCallback(
+    (target: CustomLandingTarget | null) => {
+      setLocalCustomTarget(target);
+      scenarioCommands?.setCustomTarget(target);
+    },
+    [scenarioCommands],
+  );
 
   const [savedTargets, setSavedTargets] = useState<CustomLandingTarget[]>(() => {
     return loadCustomLandingTargets(storage);
   });
 
-  const openStudio = useCallback((target?: CustomLandingTarget | null) => {
-    if (target) setCustomTarget(target);
-    setIsStudioOpen(true);
-  }, []);
+  const openStudio = useCallback(
+    (target?: CustomLandingTarget | null) => {
+      if (target !== undefined) setCustomTarget(target);
+      setIsStudioOpen(true);
+    },
+    [setCustomTarget],
+  );
 
   const closeStudio = useCallback(() => {
     setIsStudioOpen(false);
@@ -69,7 +90,7 @@ export function useCustomTargetManager(
       const updated = saveCustomLandingTarget(target, storage);
       setSavedTargets(updated);
     },
-    [storage],
+    [setCustomTarget, storage],
   );
 
   const deleteTarget = useCallback(
@@ -80,12 +101,12 @@ export function useCustomTargetManager(
       const updated = deleteCustomLandingTarget(targetId, storage);
       setSavedTargets(updated);
     },
-    [customTarget, storage],
+    [customTarget, setCustomTarget, storage],
   );
 
   const clearTarget = useCallback(() => {
     setCustomTarget(null);
-  }, []);
+  }, [setCustomTarget]);
 
   const evaluation = useMemo(() => {
     if (!customTarget) return null;

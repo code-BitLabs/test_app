@@ -41,10 +41,9 @@ export function getLolaElevationColor(elevationMeters: number): string {
  */
 export function getSlopeColor(slopeDeg: number): string {
   if (slopeDeg < 5.0) return '#10b981'; // Green: Safe (<5°)
-  if (slopeDeg < 12.0) return '#84cc16'; // Lime: Moderate (5°-12°)
-  if (slopeDeg < 18.0) return '#f59e0b'; // Amber: Caution (12°-18°)
-  if (slopeDeg < 25.0) return '#ea580c'; // Orange: Steep (18°-25°)
-  return '#dc2626'; // Red: Hazard (>25°)
+  if (slopeDeg < 12.0) return '#84cc16'; // Lime/Yellow: Moderate (5°-12°)
+  if (slopeDeg < 15.0) return '#f59e0b'; // Amber: Caution (12°-15°)
+  return '#dc2626'; // Red: Critical Hazard (>=15° Artemis III lander tip-over threshold)
 }
 
 /**
@@ -93,10 +92,9 @@ export function getLolaElevationRgb(elevationMeters: number): [number, number, n
 
 export function getSlopeRgb(slopeDeg: number): [number, number, number] {
   if (slopeDeg < 5.0) return [16, 185, 129]; // Safe Green (<5°)
-  if (slopeDeg < 12.0) return [132, 204, 22]; // Lime Moderate (5°-12°)
-  if (slopeDeg < 18.0) return [245, 158, 11]; // Amber Caution (12°-18°)
-  if (slopeDeg < 25.0) return [234, 88, 12]; // Orange Steep (18°-25°)
-  return [220, 38, 38]; // Red Hazard (>25°)
+  if (slopeDeg < 12.0) return [132, 204, 22]; // Lime/Yellow Moderate (5°-12°)
+  if (slopeDeg < 15.0) return [245, 158, 11]; // Amber Caution (12°-15°)
+  return [220, 38, 38]; // Red Hazard (>=15° Artemis III tip-over threshold)
 }
 
 export function getGeologyUnitRgb(unitCode: 'pNb' | 'Nb' | 'Im' | 'Cc' | 'PSR'): [number, number, number] {
